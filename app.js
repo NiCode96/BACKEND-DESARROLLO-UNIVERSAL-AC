@@ -42,7 +42,7 @@ import ReservaPacientes from "./model/ReservaPacientes.js";
 import cotizacionPacienteRoutes from "./view/cotizacionPacienteRoutes.js";
 import envioCotizacionRoutes from "./view/envioCotizacionRoutes.js";
 import detalleCotizaciones from "./view/detalleCotizacionRoutes.js"
-
+import resenasRoutes from "./view/resenasRoutes.js";
 
 
 
@@ -68,6 +68,7 @@ app.use("/pedidos", pedidosRoutes);
 app.use("/bloqueoAgenda", bloqueoAgendaRoutes);
 app.use("/odontograma", odontogramaRoutes);
 app.use("/profesionales", profesionalesRoutes);
+app.use("/resenas", resenasRoutes);
 app.use("/serviciosProfesionales", serviciosProfesionalesRoutes);
 app.use("/tarifasProfesional", tarifasProfesionalRoutes);
 app.use("/especificacionProducto", especificacionProductoRoutes);
