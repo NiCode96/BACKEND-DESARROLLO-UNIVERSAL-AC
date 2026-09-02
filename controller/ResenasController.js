@@ -1,6 +1,7 @@
 import Resenas from '../model/Resenas.js';
 
 const COMENTARIO_MAX_LARGO = 1000;
+const NOMBRE_MAX_LARGO = 100;
 
 // Valida que un id opcional venga como entero positivo. Devuelve null si no vino,
 // undefined si vino pero es inválido (para poder distinguir "sindata" de "no vino").
@@ -9,6 +10,15 @@ function normalizarIdOpcional(valor) {
     const numero = Number(valor);
     if (!Number.isInteger(numero) || numero <= 0) return undefined;
     return numero;
+}
+
+// Valida un texto opcional (nombre/apellido de invitado). Misma convención que normalizarIdOpcional.
+function normalizarTextoOpcional(valor) {
+    if (valor === undefined || valor === null || valor === '') return null;
+    if (typeof valor !== 'string') return undefined;
+    const limpio = valor.trim();
+    if (!limpio || limpio.length > NOMBRE_MAX_LARGO) return undefined;
+    return limpio;
 }
 
 export default class ResenasController {
@@ -46,8 +56,22 @@ export default class ResenasController {
                 return res.status(400).json({ message: "sindata" });
             }
 
+            const nombre_invitado = normalizarTextoOpcional(req.body.nombre_invitado);
+            const apellido_invitado = normalizarTextoOpcional(req.body.apellido_invitado);
+
+            if (nombre_invitado === undefined || apellido_invitado === undefined) {
+                return res.status(400).json({ message: "sindata" });
+            }
+
+            // Sin paciente registrado, la reseña necesita al menos un nombre de invitado.
+            if (!paciente_id && !nombre_invitado) {
+                return res.status(400).json({ message: "sindata" });
+            }
+
             const resenaClass = new Resenas();
-            const resultado = await resenaClass.insertarResena(ratingNumero, comentarioLimpio, paciente_id, profesional_id, clinica_id);
+            const resultado = await resenaClass.insertarResena(
+                ratingNumero, comentarioLimpio, paciente_id, profesional_id, clinica_id, nombre_invitado, apellido_invitado
+            );
 
             if (resultado.affectedRows > 0) {
                 res.status(200).json({ message: true });

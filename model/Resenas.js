@@ -21,10 +21,10 @@ export default class Resenas {
         this.created_at = created_at;
     }
 
-    async insertarResena(rating, comentario, paciente_id = null, profesional_id = null, clinica_id = null) {
+    async insertarResena(rating, comentario, paciente_id = null, profesional_id = null, clinica_id = null, nombre_invitado = null, apellido_invitado = null) {
         const conexion = DataBase.getInstance();
-        const query = `INSERT INTO resenas (rating, comentario, paciente_id, profesional_id, clinica_id) VALUES (?,?,?,?,?)`;
-        const params = [rating, comentario, paciente_id, profesional_id, clinica_id];
+        const query = `INSERT INTO resenas (rating, comentario, paciente_id, profesional_id, clinica_id, nombre_invitado, apellido_invitado) VALUES (?,?,?,?,?,?,?)`;
+        const params = [rating, comentario, paciente_id, profesional_id, clinica_id, nombre_invitado, apellido_invitado];
         try {
             const resultado = await conexion.ejecutarQuery(query, params);
             return resultado;
