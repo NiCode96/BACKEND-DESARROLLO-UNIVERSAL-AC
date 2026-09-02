@@ -1,5 +1,16 @@
 import Resenas from '../model/Resenas.js';
 
+const COMENTARIO_MAX_LARGO = 1000;
+
+// Valida que un id opcional venga como entero positivo. Devuelve null si no vino,
+// undefined si vino pero es inválido (para poder distinguir "sindata" de "no vino").
+function normalizarIdOpcional(valor) {
+    if (valor === undefined || valor === null || valor === '') return null;
+    const numero = Number(valor);
+    if (!Number.isInteger(numero) || numero <= 0) return undefined;
+    return numero;
+}
+
 export default class ResenasController {
 
     constructor() {}
@@ -7,18 +18,36 @@ export default class ResenasController {
     // FUNCION PARA INSERTAR UNA NUEVA RESEÑA
     static async insertarResenaController(req, res) {
         try {
-            const { rating, comentario, paciente_id, profesional_id, clinica_id } = req.body;
+            const { rating, comentario } = req.body;
 
-            if (rating === undefined || rating === null || !comentario || (!paciente_id && !profesional_id)) {
+            if (rating === undefined || rating === null || typeof comentario !== 'string') {
                 return res.status(400).json({ message: "sindata" });
             }
 
-            if (rating < 1 || rating > 5) {
+            const ratingNumero = Number(rating);
+            if (!Number.isInteger(ratingNumero) || ratingNumero < 1 || ratingNumero > 5) {
                 return res.status(400).json({ message: "ratingInvalido" });
             }
 
+            const comentarioLimpio = comentario.trim();
+            if (!comentarioLimpio || comentarioLimpio.length > COMENTARIO_MAX_LARGO) {
+                return res.status(400).json({ message: "sindata" });
+            }
+
+            const paciente_id = normalizarIdOpcional(req.body.paciente_id);
+            const profesional_id = normalizarIdOpcional(req.body.profesional_id);
+            const clinica_id = normalizarIdOpcional(req.body.clinica_id);
+
+            if (paciente_id === undefined || profesional_id === undefined || clinica_id === undefined) {
+                return res.status(400).json({ message: "sindata" });
+            }
+
+            if (!paciente_id && !profesional_id) {
+                return res.status(400).json({ message: "sindata" });
+            }
+
             const resenaClass = new Resenas();
-            const resultado = await resenaClass.insertarResena(rating, comentario, paciente_id, profesional_id, clinica_id);
+            const resultado = await resenaClass.insertarResena(ratingNumero, comentarioLimpio, paciente_id, profesional_id, clinica_id);
 
             if (resultado.affectedRows > 0) {
                 res.status(200).json({ message: true });
