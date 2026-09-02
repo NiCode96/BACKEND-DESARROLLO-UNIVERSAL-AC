@@ -9,7 +9,7 @@ export default class ResenasController {
         try {
             const { rating, comentario, paciente_id, profesional_id, clinica_id } = req.body;
 
-            if (!rating || !comentario || (!paciente_id && !profesional_id)) {
+            if (rating === undefined || rating === null || !comentario || (!paciente_id && !profesional_id)) {
                 return res.status(400).json({ message: "sindata" });
             }
 
@@ -69,7 +69,7 @@ export default class ResenasController {
         try {
             const { id_resena, rating, comentario } = req.body;
 
-            if (!id_resena || !rating || !comentario) {
+            if (!id_resena || rating === undefined || rating === null || !comentario) {
                 return res.status(400).json({ message: "sindata" });
             }
 
@@ -83,7 +83,7 @@ export default class ResenasController {
             if (resultado.affectedRows > 0) {
                 res.status(200).json({ message: true });
             } else {
-                res.status(500).json({ message: false });
+                res.status(404).json({ message: "noEncontrada" });
             }
         } catch (error) {
             res.status(500).json({ message: "serverError" });
@@ -105,7 +105,7 @@ export default class ResenasController {
             if (resultado.affectedRows > 0) {
                 res.status(200).json({ message: true });
             } else {
-                res.status(500).json({ message: false });
+                res.status(404).json({ message: "noEncontrada" });
             }
         } catch (error) {
             res.status(500).json({ message: "serverError" });

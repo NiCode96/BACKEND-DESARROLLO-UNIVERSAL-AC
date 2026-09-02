@@ -1,0 +1,448 @@
+########################################################
+# RESEÑAS - Pruebas de endpoints /resenas
+# Requiere el servidor levantado en localhost:3001
+########################################################
+
+
+########################################
+# INSERTAR RESEÑA
+########################################
+
+### 1. Insertar reseña válida (con paciente_id y profesional_id) -> 200 { message: true }
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": 5,
+  "comentario": "Excelente atención, muy profesional y puntual.",
+  "paciente_id": 1,
+  "profesional_id": 1
+}
+
+
+### 2. Insertar reseña válida solo con paciente_id (sin profesional_id) -> 200
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": 4,
+  "comentario": "Buena experiencia en general.",
+  "paciente_id": 1
+}
+
+
+### 3. Insertar reseña válida solo con profesional_id (sin paciente_id) -> 200
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": 3,
+  "comentario": "Reseña asociada solo al profesional.",
+  "profesional_id": 1
+}
+
+
+### 4. Insertar reseña válida incluyendo clinica_id -> 200
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": 5,
+  "comentario": "La clínica también quedó registrada en la reseña.",
+  "paciente_id": 1,
+  "profesional_id": 1,
+  "clinica_id": 1
+}
+
+
+### 5. rating en el límite inferior válido (1) -> 200
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": 1,
+  "comentario": "La peor atención que he recibido.",
+  "profesional_id": 1
+}
+
+
+### 6. rating en el límite superior válido (5) -> 200
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": 5,
+  "comentario": "Atención perfecta.",
+  "profesional_id": 1
+}
+
+
+### 7. Falta rating -> 400 { message: "sindata" }
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "comentario": "Sin calificación numérica.",
+  "profesional_id": 1
+}
+
+
+### 8. Falta comentario -> 400 { message: "sindata" }
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": 4,
+  "profesional_id": 1
+}
+
+
+### 9. Falta paciente_id y profesional_id a la vez -> 400 { message: "sindata" }
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": 4,
+  "comentario": "No debería insertarse, no hay a quién asociarla."
+}
+
+
+### 10. rating = 0 (bajo el límite) -> 400 { message: "ratingInvalido" }
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": 0,
+  "comentario": "Rating fuera de rango por abajo.",
+  "profesional_id": 1
+}
+
+
+### 11. rating = 6 (sobre el límite) -> 400 { message: "ratingInvalido" }
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": 6,
+  "comentario": "Rating fuera de rango por arriba.",
+  "profesional_id": 1
+}
+
+
+### 12. rating negativo -> 400 { message: "ratingInvalido" }
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": -3,
+  "comentario": "Rating negativo, no debería aceptarse.",
+  "profesional_id": 1
+}
+
+
+### 13. rating como string numérico ("4") -> revisar coerción, hoy pasa la validación (400/200 según casting)
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": "4",
+  "comentario": "Rating enviado como texto.",
+  "profesional_id": 1
+}
+
+
+### 14. rating decimal (4.5) -> hoy pasa la validación (1-5), revisar si se desea restringir a enteros
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": 4.5,
+  "comentario": "Rating con decimales.",
+  "profesional_id": 1
+}
+
+
+### 15. comentario vacío ("") -> hoy pasa como "falsy"? revisar, string vacío es falsy en JS -> 400 { message: "sindata" }
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": 4,
+  "comentario": "",
+  "profesional_id": 1
+}
+
+
+### 16. paciente_id y profesional_id ambos inexistentes en BD -> hoy el endpoint no valida FK, revisar si debería fallar
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": 4,
+  "comentario": "IDs que no existen en la base de datos.",
+  "paciente_id": 999999,
+  "profesional_id": 999999
+}
+
+
+### 17. body vacío -> 400 { message: "sindata" }
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{}
+
+
+########################################
+# ACTUALIZAR RESEÑA
+########################################
+
+### 18. Actualizar reseña existente -> 200 { message: true } (ajustar id_resena a uno real)
+POST http://localhost:3001/resenas/actualizarResena
+Content-Type: application/json
+
+{
+  "id_resena": 1,
+  "rating": 3,
+  "comentario": "Comentario actualizado tras una segunda visita."
+}
+
+
+### 19. Falta id_resena -> 400 { message: "sindata" }
+POST http://localhost:3001/resenas/actualizarResena
+Content-Type: application/json
+
+{
+  "rating": 3,
+  "comentario": "Falta el id de la reseña."
+}
+
+
+### 20. Falta rating -> 400 { message: "sindata" }
+POST http://localhost:3001/resenas/actualizarResena
+Content-Type: application/json
+
+{
+  "id_resena": 1,
+  "comentario": "Falta el rating."
+}
+
+
+### 21. Falta comentario -> 400 { message: "sindata" }
+POST http://localhost:3001/resenas/actualizarResena
+Content-Type: application/json
+
+{
+  "id_resena": 1,
+  "rating": 3
+}
+
+
+### 22. rating fuera de rango (0) -> 400 { message: "ratingInvalido" }
+POST http://localhost:3001/resenas/actualizarResena
+Content-Type: application/json
+
+{
+  "id_resena": 1,
+  "rating": 0,
+  "comentario": "Rating inválido al actualizar."
+}
+
+
+### 23. rating fuera de rango (6) -> 400 { message: "ratingInvalido" }
+POST http://localhost:3001/resenas/actualizarResena
+Content-Type: application/json
+
+{
+  "id_resena": 1,
+  "rating": 6,
+  "comentario": "Rating inválido al actualizar."
+}
+
+
+### 24. id_resena inexistente (o de una reseña ya eliminada) -> 404 { message: "noEncontrada" }
+POST http://localhost:3001/resenas/actualizarResena
+Content-Type: application/json
+
+{
+  "id_resena": 999999,
+  "rating": 4,
+  "comentario": "Intento de actualizar una reseña que no existe."
+}
+
+
+########################################
+# ELIMINAR (DESACTIVAR) RESEÑA
+########################################
+
+### 25. Eliminar reseña existente -> 200 { message: true } (ajustar id_resena a uno real)
+POST http://localhost:3001/resenas/eliminarResena
+Content-Type: application/json
+
+{
+  "id_resena": 1
+}
+
+
+### 26. Falta id_resena -> 400 { message: "sindata" }
+POST http://localhost:3001/resenas/eliminarResena
+Content-Type: application/json
+
+{}
+
+
+### 27. id_resena inexistente -> 404 { message: "noEncontrada" }
+POST http://localhost:3001/resenas/eliminarResena
+Content-Type: application/json
+
+{
+  "id_resena": 999999
+}
+
+
+### 28. Eliminar una reseña ya eliminada (doble eliminación) -> ahora el WHERE filtra estado <> 0,
+### así que la segunda llamada no encuentra filas que afectar -> 404 { message: "noEncontrada" }
+POST http://localhost:3001/resenas/eliminarResena
+Content-Type: application/json
+
+{
+  "id_resena": 1
+}
+
+
+########################################
+# LISTAR POR PROFESIONAL
+########################################
+
+### 29. Listar reseñas de un profesional con reseñas activas -> 200 [ {...}, {...} ]
+POST http://localhost:3001/resenas/seleccionarPorProfesional
+Content-Type: application/json
+
+{
+  "profesional_id": 1
+}
+
+
+### 30. Listar reseñas de un profesional sin reseñas -> 200 [] (array vacío)
+POST http://localhost:3001/resenas/seleccionarPorProfesional
+Content-Type: application/json
+
+{
+  "profesional_id": 999999
+}
+
+
+### 31. Falta profesional_id -> 400 { message: "sindata" }
+POST http://localhost:3001/resenas/seleccionarPorProfesional
+Content-Type: application/json
+
+{}
+
+
+### 32. profesional_id como string -> revisar coerción implícita en la query
+POST http://localhost:3001/resenas/seleccionarPorProfesional
+Content-Type: application/json
+
+{
+  "profesional_id": "1"
+}
+
+
+########################################
+# PROMEDIO POR PROFESIONAL
+########################################
+
+### 33. Promedio de un profesional con reseñas -> 200 { promedio: X.XX, total: N }
+POST http://localhost:3001/resenas/promedioPorProfesional
+Content-Type: application/json
+
+{
+  "profesional_id": 1
+}
+
+
+### 34. Promedio de un profesional sin reseñas -> 200 { promedio: null, total: 0 }
+POST http://localhost:3001/resenas/promedioPorProfesional
+Content-Type: application/json
+
+{
+  "profesional_id": 999999
+}
+
+
+### 35. Falta profesional_id -> 400 { message: "sindata" }
+POST http://localhost:3001/resenas/promedioPorProfesional
+Content-Type: application/json
+
+{}
+
+
+########################################
+# LISTAR TODAS (uso interno / dashboard)
+########################################
+
+### 36. Listar todas las reseñas activas -> 200 [ {...}, ... ] ordenadas por created_at DESC
+GET http://localhost:3001/resenas/seleccionarTodas
+Content-Type: application/json
+
+
+########################################
+# FLUJO COMPLETO SUGERIDO (ejecutar en orden)
+########################################
+
+### 37. Paso 1: insertar reseña de prueba para flujo end-to-end
+POST http://localhost:3001/resenas/insertarResena
+Content-Type: application/json
+
+{
+  "rating": 2,
+  "comentario": "Reseña creada para probar el flujo completo (insertar -> listar -> promedio -> actualizar -> eliminar -> re-listar).",
+  "paciente_id": 1,
+  "profesional_id": 1
+}
+
+
+### 38. Paso 2: verificar que aparece al listar por profesional
+POST http://localhost:3001/resenas/seleccionarPorProfesional
+Content-Type: application/json
+
+{
+  "profesional_id": 1
+}
+
+
+### 39. Paso 3: verificar que el promedio cambió
+POST http://localhost:3001/resenas/promedioPorProfesional
+Content-Type: application/json
+
+{
+  "profesional_id": 1
+}
+
+
+### 40. Paso 4: actualizar la reseña creada (ajustar id_resena al retornado en el paso 1)
+POST http://localhost:3001/resenas/actualizarResena
+Content-Type: application/json
+
+{
+  "id_resena": 999,
+  "rating": 5,
+  "comentario": "Reseña de flujo completo, actualizada."
+}
+
+
+### 41. Paso 5: eliminar la reseña creada (ajustar id_resena)
+POST http://localhost:3001/resenas/eliminarResena
+Content-Type: application/json
+
+{
+  "id_resena": 999
+}
+
+
+### 42. Paso 6: verificar que ya no aparece al listar por profesional (borrado lógico)
+POST http://localhost:3001/resenas/seleccionarPorProfesional
+Content-Type: application/json
+
+{
+  "profesional_id": 1
+}

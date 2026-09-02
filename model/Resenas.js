@@ -35,7 +35,7 @@ export default class Resenas {
 
     async actualizarResena(rating, comentario, id_resena) {
         const conexion = DataBase.getInstance();
-        const query = `UPDATE resenas SET rating = ?, comentario = ? WHERE id_resena = ?`;
+        const query = `UPDATE resenas SET rating = ?, comentario = ? WHERE id_resena = ? AND estado <> 0`;
         const params = [rating, comentario, id_resena];
         try {
             const resultado = await conexion.ejecutarQuery(query, params);
@@ -59,7 +59,7 @@ export default class Resenas {
 
     async eliminarResena(id_resena) {
         const conexion = DataBase.getInstance();
-        const query = `UPDATE resenas SET estado = 0 WHERE id_resena = ?`;
+        const query = `UPDATE resenas SET estado = 0 WHERE id_resena = ? AND estado <> 0`;
         const params = [id_resena];
         try {
             const resultado = await conexion.ejecutarQuery(query, params);
@@ -71,7 +71,19 @@ export default class Resenas {
 
     async seleccionarResenas() {
         const conexion = DataBase.getInstance();
-        const query = `SELECT * FROM resenas WHERE estado <> 0 ORDER BY created_at DESC`;
+        const query = `
+            SELECT
+                r.*,
+                pd.nombre AS nombrePaciente,
+                pd.apellido AS apellidoPaciente,
+                pr.nombreProfesional,
+                pr.descripcionProfesional
+            FROM resenas r
+            LEFT JOIN pacienteDatos pd ON pd.id_paciente = r.paciente_id
+            LEFT JOIN profesionales pr ON pr.id_profesional = r.profesional_id
+            WHERE r.estado <> 0
+            ORDER BY r.created_at DESC
+        `;
         try {
             const resultado = await conexion.ejecutarQuery(query);
             return resultado;
