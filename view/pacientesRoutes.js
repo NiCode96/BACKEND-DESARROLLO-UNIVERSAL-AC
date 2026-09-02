@@ -9,6 +9,7 @@ router.post("/eliminarPaciente", PacienteController.eliminarPaciente);
 router.post("/pacientesInsercion", PacienteController.insertarPacienteNuevo);
 router.post("/pacientesActualizar", PacienteController.actualizarPaciente);
 router.post("/contieneRut", PacienteController.seleccionarCoincidenciaRUT);
+router.post("/buscarRutEspecifico", PacienteController.buscarPaciente_RutExacto);
 router.post("/contieneNombre", PacienteController.seleccionarCoincidenciaNombre);
 
 

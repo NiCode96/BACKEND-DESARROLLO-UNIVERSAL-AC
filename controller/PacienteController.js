@@ -50,6 +50,30 @@ export default class PacienteController {
 
 
 
+    static async buscarPaciente_RutExacto(req, res){
+        try {
+            console.log(req.body)
+            const {rut} = req.body;
+
+            if (!rut) {
+                return res.status(400).json({message : 'sindato'})
+            }
+            const paciente = new Paciente();
+            const resultado = await paciente.selectPorRutEspecifico(rut);
+
+            if (resultado) {
+                return res.json(resultado)
+
+            }else{
+                return res.status(400).json({message : 'sindato'})
+            }
+        } catch (error) {
+            res.status(500).json({
+                error: "No se ha podido realizar la consulta desde PacienteController"
+            });
+        }
+    }
+
 
     static async seleccionarCoincidenciaRUT(req, res){
         try {
