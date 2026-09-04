@@ -77,24 +77,16 @@ export default class DatosEmpresaController {
                     !contactoWhatsapp ||
                     !contactoEmail ||
                     !contactoDireccion ||
-                    !contactoUrlMapa ||
                     !sobreNosotrosTitulo ||
                     !sobreNosotrosParrafo1 ||
                     !sobreNosotrosParrafo2 ||
-                    !socialInstagramUrl ||
-                    !socialInstagramHandle ||
-                    !socialFacebookUrl ||
-                    !socialTwitterUrl ||
-                    !socialLinkedinUrl ||
-                    !socialTiktokUrl ||
-                    !socialYoutubeUrl ||
-                    !socialOtraUrl ||
-                    !socialOtraEtiqueta ||
                     !id_empresa
             ) {
                 res.status(400).send({
                     message: `sinDato`,
                 });
+
+                return;
             }
 
             const datosEmpresaObjeto = new DatosEmpresa();
