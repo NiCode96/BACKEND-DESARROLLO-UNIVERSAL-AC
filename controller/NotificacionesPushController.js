@@ -22,8 +22,13 @@ export default class NotificacionesPushController {
 
     static async getNotificaciones(req, res) {
         try {
+            // Se ocultan cuando pasa la hora de la cita (fecha_evento) o cuando el
+            // usuario las descarta explícitamente (visto=1, botón "X" o "marcar
+            // todas"). Ya NO se marcan leídas solo por abrir el panel.
             const rows = await db().ejecutarQuery(
-                `SELECT * FROM notificaciones_inapp WHERE visto = 0 ORDER BY creado_en DESC LIMIT 50`,
+                `SELECT * FROM notificaciones_inapp
+                 WHERE visto = 0 AND (fecha_evento IS NULL OR fecha_evento >= NOW())
+                 ORDER BY creado_en DESC LIMIT 50`,
                 []
             );
             res.status(200).json(rows);
