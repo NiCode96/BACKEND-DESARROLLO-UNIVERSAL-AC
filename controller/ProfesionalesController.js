@@ -1,5 +1,17 @@
 import Profesionales from '../model/Profesionales.js';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// correo_profesional es opcional (no todos los profesionales lo cargan de inmediato),
+// pero si viene, debe tener formato válido para no guardar basura que luego rompa el envío del .ics.
+// valor: null significa "guardar vacío" (el cliente mandó "" o null explícito).
+function normalizarCorreoProfesional(correo_profesional) {
+    const valor = String(correo_profesional).trim();
+    if (!valor) return { ok: true, valor: null };
+    if (!EMAIL_REGEX.test(valor)) return { ok: false, valor: null };
+    return { ok: true, valor };
+}
+
 export default class ProfesionalesController {
 
     constructor() {
@@ -8,12 +20,18 @@ export default class ProfesionalesController {
     //FUNCION PARA INSERTAR UN NUEVO PROFESIONAL
     static async insertarProfesionalController(req, res) {
         try{
-            const { nombreProfesional, descripcionProfesional } = req.body;
+            const { nombreProfesional, descripcionProfesional, correo_profesional } = req.body;
             if (!nombreProfesional || !descripcionProfesional) {
                 return res.status(400).json({ message: "sindata" });
             }
+
+            const correo = normalizarCorreoProfesional(correo_profesional ?? "");
+            if (!correo.ok) {
+                return res.status(400).json({ message: "correoInvalido" });
+            }
+
             const profesionalClass = new Profesionales();
-            const resultado = await profesionalClass.insertarProfesionalModel(nombreProfesional, descripcionProfesional);
+            const resultado = await profesionalClass.insertarProfesionalModel(nombreProfesional, descripcionProfesional, correo.valor);
             if (resultado.affectedRows > 0) {
                 res.status(200).json({ message: true });
             }else {
@@ -28,12 +46,25 @@ export default class ProfesionalesController {
     //FUNCION PARA ACTUALIZAR UN PROFESIONAL
     static async actualizarProfesionalController(req, res) {
         try{
-            const {nombreProfesional, descripcionProfesional, id_profesional} = req.body;
+            const {nombreProfesional, descripcionProfesional, correo_profesional, id_profesional} = req.body;
             if (!nombreProfesional || !descripcionProfesional || !id_profesional) {
                 return res.status(400).json({ message: "sindata" });
             }
+
+            // Si el body no trae correo_profesional, no se toca la columna (evita borrar
+            // un correo ya guardado cuando el frontend solo actualiza nombre/descripción).
+            const correoProvisto = Object.prototype.hasOwnProperty.call(req.body, 'correo_profesional');
+            let correoParaGuardar; // undefined = "no tocar la columna" para el model
+            if (correoProvisto) {
+                const correo = normalizarCorreoProfesional(correo_profesional ?? "");
+                if (!correo.ok) {
+                    return res.status(400).json({ message: "correoInvalido" });
+                }
+                correoParaGuardar = correo.valor;
+            }
+
             const profesionalClass = new Profesionales();
-            const resultado = await profesionalClass.actualizarProfesionalModel(nombreProfesional, descripcionProfesional, id_profesional);
+            const resultado = await profesionalClass.actualizarProfesionalModel(nombreProfesional, descripcionProfesional, correoParaGuardar, id_profesional);
 
             if (resultado.affectedRows > 0) {
                 res.status(200).json({ message: true });

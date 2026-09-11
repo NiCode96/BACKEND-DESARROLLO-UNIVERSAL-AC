@@ -2,6 +2,7 @@ import "dotenv/config";
 import { Buffer } from "node:buffer";
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
+import { construirCorreoBase, construirTablaDetalle, TEXTO_PRINCIPAL, TEXTO_SECUNDARIO } from "./emailTemplateBase.js";
 
 
 function generarCotizacionPdf(fecha,cotizacion,detalle,empresa) {
@@ -337,58 +338,22 @@ export default class EnviarPdfService {
                                 `Cotización - ${empresa.empresaNombre ?? ""} / ${cotizacion.nombre ?? ""} ${cotizacion.apellido ?? ""}`,
 
           
-                            htmlContent: `
-                  <div style="font-family: Arial, sans-serif; max-width:
-                  600px; margin: 0 auto;">
-                      <h2 style="color: #18364e;">
-                          ${empresa.empresaNombre}
-                      </h2>
-
-                      <p>
-                          Estimado/a
-                          <strong>
-                              ${nombre_paciente}
-                          </strong>:
-                      </p>
-
-                      <p>
-                          Adjuntamos su cotización de tratamiento
-                          en formato PDF.
-                      </p>
-
-                      <p>
-                          ID de cotización:
-                          <strong>
-                              #${cotizacion.id_cotizacion_paciente}
-                          </strong>
-                      </p>
-
-                      <p>
-                          Fecha de emisión:
-                          <strong>
-                              ${formatearFechaDocumento(fecha)}
-                          </strong>
-                      </p>
-
-                      <p>
-                      Si tiene alguna consulta, puede contactarnos a través de nuestros canales regulares.
-                      </p> 
-                      
-                      </br>
-                          
-                          Correo Contacto:
-                          <strong>
-                              ${empresa.contactoEmail}
-                          </strong>
-                                   </br>
-                          
-                          Contacto Telefono::
-                          <strong>
-                              ${empresa.contactoTelefono}
-                          </strong>
-                      
-                  </div>
-              `,
+                            htmlContent: construirCorreoBase({
+                                eyebrow: empresa.empresaNombre,
+                                titulo: `Cotización #${cotizacion.id_cotizacion_paciente}`,
+                                introHtml: `<p style="margin:0;">Estimado/a <strong>${nombre_paciente}</strong>:</p>`,
+                                contenidoHtml: `
+                                    <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.7; color: ${TEXTO_PRINCIPAL};">Adjuntamos su cotización de tratamiento en formato PDF.</p>
+                                    ${construirTablaDetalle([
+                                        { label: "ID de cotización", value: `#${cotizacion.id_cotizacion_paciente}` },
+                                        { label: "Fecha de emisión", value: formatearFechaDocumento(fecha) },
+                                        { label: "Correo de contacto", value: empresa.contactoEmail },
+                                        { label: "Teléfono de contacto", value: empresa.contactoTelefono },
+                                    ])}
+                                    <p style="margin: 20px 0 0 0; font-size: 14px; color: ${TEXTO_SECUNDARIO};">Si tiene alguna consulta, puede contactarnos a través de nuestros canales regulares.</p>
+                                `,
+                                nombreEmpresa: empresa.empresaNombre,
+                            }),
                             attachment: [
                                 {
                                     content: pdf_base64,

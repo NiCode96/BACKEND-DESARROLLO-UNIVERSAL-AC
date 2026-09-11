@@ -27,8 +27,9 @@ import DistribucionProfesionalRoutes from "./view/distribucionProfesionalRoutes.
 import serviciosProfesionalesRoutes from "./view/serviciosProfesionalesRoutes.js";
 import tarifasProfesionalRoutes from "./view/tarifasProfesionalRoutes.js";
 import odontogramaRoutes from "./view/odontogramaRoutes.js";
-import { ejecutarRecordatoriosAutomaticos } from "./services/notificacionPreviaDia.js";
+import { ejecutarRecordatoriosAutomaticos, limpiarNotificacionesInappAntiguas } from "./services/notificacionPreviaDia.js";
 import { notificacionAgendamiento } from "./services/notificacionWhatsApp.js";
+import notificacionesPushRoutes from "./view/notificacionesPushRoutes.js";
 import bloqueoAgendaRoutes from "./view/bloqueoAgendaRoutes.js";
 import publicacionesTituloDescripcionRoutes from "./view/publicacionesTtiloDescripcionRoutes.js";
 import fichaPlantillaRoutes from "./view/fichaPlantillaRoutes.js";
@@ -103,6 +104,7 @@ app.use("/persistence", persistence);
 app.use("/cotizacionPaciente", cotizacionPacienteRoutes);
 app.use("/detalleCotizacion", detalleCotizaciones);
 app.use("/envioCotizacionCorreo", envioCotizacionRoutes);
+app.use("/notificaciones", notificacionesPushRoutes);
 
 
 // Ruta para ejecutar recordatorios manualmente (protegido con TEST_API_KEY)
@@ -178,4 +180,10 @@ app.listen(PORT, () => {
         console.log("[CRON] Ejecutando primera revisión de recordatorios...");
         await ejecutarRecordatoriosAutomaticos();
     }, 10000); // Esperar 10 segundos después de iniciar
+
+    // CRON NOTIFICACIONES: limpiar notificaciones in-app leídas/antiguas — cada 30 min.
+    console.log("[CRON] Iniciando cron job de limpieza de notificaciones in-app (cada 30 minutos)...");
+    setInterval(() => {
+        limpiarNotificacionesInappAntiguas();
+    }, 30 * 60 * 1000);
 })

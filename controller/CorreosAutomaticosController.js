@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { obtenerDatosEmpresaConfig } from "../services/datosEmpresaConfig.js";
+import { construirCorreoBase, construirTablaDetalle, TEXTO_PRINCIPAL, TEXTO_SECUNDARIO, BORDE } from "../services/emailTemplateBase.js";
 
 export default class CorreosAutomaticosController {
 
@@ -57,17 +58,13 @@ export default class CorreosAutomaticosController {
                         name: nombreEmpresa,
                     },
                     subject: asunto,
-                    htmlContent: `
-                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                            <h2 style="color: #0369a1;">${nombreEmpresa}</h2>
-                            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin-top: 20px;">
-                                ${mensaje.replace(/\n/g, '<br/>')}
-                            </div>
-                            <p style="margin-top: 20px; color: #64748b; font-size: 14px;">
-                                Si tienes alguna consulta adicional, no dudes en contactarnos en nuestros canales regulares.
-                            </p>
-                        </div>
-                    `,
+                    htmlContent: construirCorreoBase({
+                        eyebrow: nombreEmpresa,
+                        titulo: asunto,
+                        contenidoHtml: `<div style="font-size:14px; line-height:1.7; color:${TEXTO_PRINCIPAL};">${mensaje.replace(/\n/g, '<br/>')}</div>`,
+                        footerNota: "Si tienes alguna consulta adicional, no dudes en contactarnos en nuestros canales regulares.",
+                        nombreEmpresa,
+                    }),
                 }),
             });
 
@@ -141,13 +138,18 @@ export default class CorreosAutomaticosController {
                         name: nombre,
                     },
                     subject: `Nuevo mensaje de ${nombre}`,
-                    htmlContent: `
-
-            <h2>Nueva consulta de Cliente desde ${nombreEmpresa} (Formulario de Contacto):</h2>
-            <p><strong>Nombre:</strong> ${nombre}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Mensaje:</strong><br/>${mensaje}</p>
-          `,
+                    htmlContent: construirCorreoBase({
+                        eyebrow: "Formulario de Contacto",
+                        titulo: `Nueva consulta de ${nombre}`,
+                        contenidoHtml: `
+                            ${construirTablaDetalle([
+                                { label: "Nombre", value: nombre },
+                                { label: "Email", value: email },
+                            ])}
+                            <p style="margin: 20px 0 0 0; font-size: 14px; line-height: 1.7; color: ${TEXTO_PRINCIPAL};">${String(mensaje).replace(/\n/g, '<br/>')}</p>
+                        `,
+                        nombreEmpresa,
+                    }),
                 }),
             });
 
@@ -203,10 +205,10 @@ export default class CorreosAutomaticosController {
                 const subtotal = Number(producto.cantidad) * Number(producto.precioUnitario || producto.precio);
                 return `
                 <tr>
-                    <td>${producto.nombre}</td>
-                    <td style="text-align:center;">${producto.cantidad}</td>
-                    <td style="text-align:right;">$${Number(producto.precioUnitario || producto.precio).toLocaleString('es-CL')}</td>
-                    <td style="text-align:right;">$${subtotal.toLocaleString('es-CL')}</td>
+                    <td style="padding: 10px 0; border-bottom: 1px solid ${BORDE}; font-size: 14px; color: ${TEXTO_PRINCIPAL};">${producto.nombre}</td>
+                    <td style="padding: 10px 0; border-bottom: 1px solid ${BORDE}; font-size: 14px; color: ${TEXTO_PRINCIPAL}; text-align:center;">${producto.cantidad}</td>
+                    <td style="padding: 10px 0; border-bottom: 1px solid ${BORDE}; font-size: 14px; color: ${TEXTO_PRINCIPAL}; text-align:right;">$${Number(producto.precioUnitario || producto.precio).toLocaleString('es-CL')}</td>
+                    <td style="padding: 10px 0; border-bottom: 1px solid ${BORDE}; font-size: 14px; font-weight:600; color: ${TEXTO_PRINCIPAL}; text-align:right;">$${subtotal.toLocaleString('es-CL')}</td>
                 </tr>
             `;
             }).join("");
@@ -239,36 +241,34 @@ export default class CorreosAutomaticosController {
                         name: nombreEmpresa,
                     },
                     subject: `Comprobante de compra #${venta.codigo || venta.id || ""}`,
-                    htmlContent: `
-                    <h2>Gracias por tu compra, ${cliente.nombre}</h2>
-                    <p>Este es el comprobante de tu compra realizada en <strong> ${nombreEmpresa} </strong>.</p>
-
-                    <h3>Datos de la compra</h3>
-                    <p><strong>Código de pedido:</strong> ${venta.codigo || "-"}<br/>
-                    <strong>Método de pago:</strong> ${venta.medioPago || "-"}<br/>
-                    <strong>Fecha:</strong> ${venta.fecha || new Date().toLocaleString('es-CL')}</p>
-
-                    <h3>Detalle de productos</h3>
-                    <table width="100%" border="1" cellspacing="0" cellpadding="8" style="border-collapse:collapse;">
-                        <thead>
-                            <tr>
-                                <th align="left">Producto</th>
-                                <th>Cant.</th>
-                                <th align="right">Precio</th>
-                                <th align="right">Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${filasProductos}
-                        </tbody>
-                    </table>
-
-                    <h3 style="text-align:right; margin-top:16px;">
-                        Total pagado: $${totalTexto} CLP
-                    </h3>
-
-                    <p>Ante cualquier duda sobre tu compra, porfavor contacta a nuestros canales de ventas oficiales.</p>
-                `,
+                    htmlContent: construirCorreoBase({
+                        eyebrow: "Comprobante de Compra",
+                        titulo: `Gracias por tu compra, ${cliente.nombre}`,
+                        introHtml: `<p style="margin:0;">Este es el comprobante de tu compra realizada en <strong>${nombreEmpresa}</strong>.</p>`,
+                        contenidoHtml: `
+                            ${construirTablaDetalle([
+                                { label: "Código de pedido", value: venta.codigo || "-" },
+                                { label: "Método de pago", value: venta.medioPago || "-" },
+                                { label: "Fecha", value: venta.fecha || new Date().toLocaleString('es-CL') },
+                            ])}
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%; border-collapse:collapse; margin-top:20px;">
+                                <thead>
+                                    <tr>
+                                        <th align="left" style="padding:8px 0; border-bottom:2px solid ${BORDE}; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:${TEXTO_SECUNDARIO};">Producto</th>
+                                        <th style="padding:8px 0; border-bottom:2px solid ${BORDE}; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:${TEXTO_SECUNDARIO};">Cant.</th>
+                                        <th align="right" style="padding:8px 0; border-bottom:2px solid ${BORDE}; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:${TEXTO_SECUNDARIO};">Precio</th>
+                                        <th align="right" style="padding:8px 0; border-bottom:2px solid ${BORDE}; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:${TEXTO_SECUNDARIO};">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${filasProductos}
+                                </tbody>
+                            </table>
+                            <p style="margin: 16px 0 0 0; text-align:right; font-size:16px; font-weight:700; color:${TEXTO_PRINCIPAL};">Total pagado: $${totalTexto} CLP</p>
+                        `,
+                        footerNota: "Ante cualquier duda sobre tu compra, contáctanos a través de nuestros canales de venta oficiales.",
+                        nombreEmpresa,
+                    }),
                 }),
             });
 

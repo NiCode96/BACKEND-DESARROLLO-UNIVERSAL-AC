@@ -1,19 +1,20 @@
 import DataBase from "../config/Database.js";
 
 export default class Profesionales {
-    constructor(id_profesional, nombreProfesional, descripcionProfesional,estado_Profesional) {
+    constructor(id_profesional, nombreProfesional, descripcionProfesional, correo_profesional, estado_Profesional) {
         this.id_profesional = id_profesional;
         this.nombreProfesional = nombreProfesional;
         this.descripcionProfesional = descripcionProfesional;
+        this.correo_profesional = correo_profesional;
         this.estado_Profesional = estado_Profesional;
     }
 
     //FUNCION PARA INSERTAR UN NUEVO PROFESIONAL
-    async insertarProfesionalModel(nombreProfesional, descripcionProfesional) {
+    async insertarProfesionalModel(nombreProfesional, descripcionProfesional, correo_profesional = null) {
         try {
             const conexion = DataBase.getInstance();
-            const query = "INSERT INTO profesionales (nombreProfesional, descripcionProfesional) VALUES (?,?)";
-            const params = [nombreProfesional, descripcionProfesional];
+            const query = "INSERT INTO profesionales (nombreProfesional, descripcionProfesional, correo_profesional) VALUES (?,?,?)";
+            const params = [nombreProfesional, descripcionProfesional, correo_profesional];
             const resultado = await conexion.ejecutarQuery(query, params);
             if (resultado) {
                 return resultado;
@@ -26,11 +27,16 @@ export default class Profesionales {
     }
 
     //FUNCION PARA ACTUALIZAR UN PROFESIONAL
-    async actualizarProfesionalModel(nombreProfesional, descripcionProfesional, id_profesional) {
+    // correo_profesional === undefined significa "no tocar esa columna" (el llamador no la envió).
+    async actualizarProfesionalModel(nombreProfesional, descripcionProfesional, correo_profesional, id_profesional) {
         try {
             const conexion = DataBase.getInstance();
-            const query = "UPDATE profesionales SET nombreProfesional = ?, descripcionProfesional = ? WHERE id_profesional = ?";
-            const params = [nombreProfesional, descripcionProfesional, id_profesional];
+            const query = correo_profesional === undefined
+                ? "UPDATE profesionales SET nombreProfesional = ?, descripcionProfesional = ? WHERE id_profesional = ?"
+                : "UPDATE profesionales SET nombreProfesional = ?, descripcionProfesional = ?, correo_profesional = ? WHERE id_profesional = ?";
+            const params = correo_profesional === undefined
+                ? [nombreProfesional, descripcionProfesional, id_profesional]
+                : [nombreProfesional, descripcionProfesional, correo_profesional, id_profesional];
             const resultado = await conexion.ejecutarQuery(query, params);
             if (resultado) {
                 return resultado;
