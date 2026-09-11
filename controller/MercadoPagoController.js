@@ -381,6 +381,7 @@ export const recibirPago = async (req, res) => {
                                 monto_reserva: reserva.monto_reserva,
                                 motivo_reserva: reserva.motivo_reserva,
                                 accion: "AGENDADA",
+                                origen: "mercadopago",
                                 id_reserva: reserva.id_reserva
                             })
                         }catch{

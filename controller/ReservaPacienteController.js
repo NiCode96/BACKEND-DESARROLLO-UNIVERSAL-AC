@@ -422,6 +422,7 @@ export default class ReservaPacienteController {
                     monto_reserva,
                     motivo_reserva,
                     accion: "AGENDADA",
+                    origen: "dashboard",
                     id_reserva: resultadoQuery.insertId
                 }).catch(err => {
                     console.error("[MAIL EQUIPO] Error:", err.message);
@@ -533,6 +534,7 @@ export default class ReservaPacienteController {
                     fechaInicio,
                     horaInicio,
                     accion: "AGENDADA",
+                    origen: "web",
                     id_reserva: resultadoQuery.insertId
                 }).catch(err => {
                     console.error("[MAIL EQUIPO] Error:", err.message);

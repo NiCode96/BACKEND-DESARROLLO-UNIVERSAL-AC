@@ -187,7 +187,7 @@ async function crearNotificacionInapp({ id_reserva, id_profesional, titulo, desc
         const conexion = DataBase.getInstance();
         await conexion.ejecutarQuery(
             `INSERT INTO notificaciones_inapp (id_reserva, id_profesional, titulo, descripcion, fecha_evento, tipo)
-             VALUES (?, ?, ?, ?, ?, 'cita')`,
+             VALUES (?, ?, ?, ?, ?, 'recordatorio')`,
             [id_reserva, id_profesional || null, titulo, descripcion || null, fecha_evento || null]
         );
     } catch (error) {

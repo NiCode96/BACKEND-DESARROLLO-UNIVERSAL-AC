@@ -552,6 +552,7 @@ export default class NotificacionAgendamiento {
             monto_reserva,
             motivo_reserva,
             accion, // "CONFIRMADA", "CANCELADA" o "AGENDADA"
+            origen, // solo aplica a "AGENDADA": "dashboard" | "web" | "mercadopago"
             id_reserva,
             id_profesional
         } = await completarDatosCorreoEquipo(datosCorreo);
@@ -628,7 +629,13 @@ export default class NotificacionAgendamiento {
                 textoAccion = "NUEVA RESERVA";
                 iconoAccion = "🗓️";
                 colorAccion = "#3b82f6"; // Azul para nueva reserva
-                detalleAccion = "La reserva fue creada manualmente desde la agenda clínica.";
+                if (origen === "web") {
+                    detalleAccion = "El paciente se autoingresó desde la página web de reservas.";
+                } else if (origen === "mercadopago") {
+                    detalleAccion = "La reserva se creó automáticamente al confirmarse el pago en línea (MercadoPago).";
+                } else {
+                    detalleAccion = "La reserva fue creada manualmente desde la agenda clínica (dashboard).";
+                }
                 text = `Se ha creado una nueva reserva desde la agenda clínica para ${nombrePaciente} ${apellidoPaciente}.\n\n` +
                     `• ID Reserva: ${id_reserva}\n` +
                     `• Fecha: ${fechaCorreo}\n` +
