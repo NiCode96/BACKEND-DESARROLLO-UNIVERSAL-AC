@@ -359,7 +359,8 @@ export default class ReservaPacienteController {
                 monto_reserva,
                 motivo_reserva,
                 estadoReserva,
-                id_profesional
+                id_profesional,
+                origen
 
             } = req.body;
 
@@ -422,7 +423,7 @@ export default class ReservaPacienteController {
                     monto_reserva,
                     motivo_reserva,
                     accion: "AGENDADA",
-                    origen: "dashboard",
+                    origen: origen === "web" || origen === "mercadopago" ? origen : "dashboard",
                     id_reserva: resultadoQuery.insertId
                 }).catch(err => {
                     console.error("[MAIL EQUIPO] Error:", err.message);

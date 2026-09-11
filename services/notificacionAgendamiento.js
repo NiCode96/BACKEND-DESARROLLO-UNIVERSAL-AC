@@ -630,11 +630,11 @@ export default class NotificacionAgendamiento {
                 iconoAccion = "🗓️";
                 colorAccion = "#3b82f6"; // Azul para nueva reserva
                 if (origen === "web") {
-                    detalleAccion = "El paciente se autoingresó desde la página web de reservas.";
+                    detalleAccion = "La reserva fue creada desde el calendario agenda web.";
                 } else if (origen === "mercadopago") {
                     detalleAccion = "La reserva se creó automáticamente al confirmarse el pago en línea (MercadoPago).";
                 } else {
-                    detalleAccion = "La reserva fue creada manualmente desde la agenda clínica (dashboard).";
+                    detalleAccion = "La reserva fue creada desde el calendario interno.";
                 }
                 text = `Se ha creado una nueva reserva desde la agenda clínica para ${nombrePaciente} ${apellidoPaciente}.\n\n` +
                     `• ID Reserva: ${id_reserva}\n` +
