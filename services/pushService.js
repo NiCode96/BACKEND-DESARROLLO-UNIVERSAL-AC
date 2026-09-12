@@ -30,7 +30,10 @@ export async function sendPushToAll(titulo, body, url = '/dashboard') {
         const subs = await db().ejecutarQuery(`SELECT * FROM push_subscriptions`, []);
         if (!subs?.length) return;
 
-        const payload = JSON.stringify({ titulo, body, icon: '/logoAC3.png', url });
+        // El ícono NO se manda desde acá: el service worker corre en el origen del
+        // FRONTEND, así que una ruta de este backend (o una relativa a él) no resuelve
+        // ahí. El ícono de marca queda fijo en el service worker del frontend.
+        const payload = JSON.stringify({ titulo, body, url });
         await Promise.allSettled(
             subs.map(sub =>
                 webpush.sendNotification(
