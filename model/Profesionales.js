@@ -5,18 +5,15 @@ export default class Profesionales {
     constructor() {
     }
 
-
     async insertarProfesionalModel(
     nombreProfesional,
     descripcionProfesional,
-    z,
+    correoContacto,
     numeroTelefono,
     rutProfesional,
     ) {
         try {
-
             const conexion = DataBase.getInstance();
-
             const query = `
             INSERT INTO profesionales (        
             nombreProfesional,
