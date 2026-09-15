@@ -2,10 +2,9 @@ import ReservaPacientes from "../model/ReservaPacientes.js";
 import Pacientes from "../model/Pacientes.js";
 import NotificacionAgendamiento from "../services/notificacionAgendamiento.js";
 import { notificacionAgendamiento, notificacionActualizacionAgendamiento } from "../services/notificacionWhatsApp.js";
-import notificacionProfesionales from "../services/correoNotificacionProfesionales.js";
 import enviarCorreoProfesionales from "../services/correoNotificacionProfesionales.js";
 import Profesionales from "../model/Profesionales.js";
-import enviarCorreoProfesionalesActualizacion from "../services/CorreoActualizacionProfesional.js";
+import enviarCorreoProfesionalesActualizacion from "../services/correoActualizacionProfesional.js";
 
 function responderErrorReserva(res, error) {
     if (error?.code === "CONFLICTO_AGENDA") {
