@@ -1,0 +1,104 @@
+@baseUrl =
+@idProfesionalPrueba = 27
+
+###
+GET {{baseUrl}}/profesionales/seleccionarTodosLosProfesionales
+Accept: application/json
+
+###
+POST http://localhost:3010/profesionales/insertarProfesional
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nombreProfesional": "Profesional HTTP Prueba",
+  "descripcionProfesional": "Profesional creado para validar el flujo HTTP del módulo.",
+  "estado_Profesional": 1,
+  "correoContacto": "profesional.http@example.test",
+  "numeroTelefono": "+56912345678",
+  "rutProfesional": "12345678-9"
+}
+
+###
+POST http://localhost:3010/profesionales/insertarProfesional
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nombreProfesional": "Profesional sin contacto",
+  "descripcionProfesional": "Caso de validación sin correo, teléfono ni RUT.",
+  "estado_Profesional": 1
+}
+
+###
+POST {{baseUrl}}/profesionales/insertarProfesional
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nombreProfesional": "Profesional correo inválido",
+  "descripcionProfesional": "Caso de validación de formato de correo.",
+  "estado_Profesional": 1,
+  "correoContacto": "correo-invalido",
+  "numeroTelefono": "+56987654321",
+  "rutProfesional": "98765432-1"
+}
+
+###
+POST {{baseUrl}}/profesionales/seleccionarProfesional
+Content-Type: application/json
+Accept: application/json
+
+{
+  "id_profesional": {{idProfesionalPrueba}}
+}
+
+###
+POST {{baseUrl}}/profesionales/seleccionarProfesional
+Content-Type: application/json
+Accept: application/json
+
+{}
+
+###
+POST http://localhost:3010/profesionales/actualizarProfesional
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nombreProfesional": "Profesional HTTP Actualizado",
+  "descripcionProfesional": "Datos actualizados desde las pruebas HTTP.",
+  "estado_Profesional": 1,
+  "correoContacto": "profesional.actualizado@example.test",
+  "numeroTelefono": "+56911223344",
+  "rutProfesional": "12345678-9",
+  "id_profesional": 27
+}
+
+###
+POST http://localhost:3010/profesionales/actualizarProfesional
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nombreProfesional": "Profesional incompleto",
+  "descripcionProfesional": "Caso de validación sin datos de contacto.",
+  "estado_Profesional": 1,
+  "id_profesional": {{idProfesionalPrueba}}
+}
+
+###
+POST {{baseUrl}}/profesionales/eliminarProfesional
+Content-Type: application/json
+Accept: application/json
+
+{
+  "id_profesional": {{idProfesionalPrueba}}
+}
+
+###
+POST {{baseUrl}}/profesionales/eliminarProfesional
+Content-Type: application/json
+Accept: application/json
+
+{}

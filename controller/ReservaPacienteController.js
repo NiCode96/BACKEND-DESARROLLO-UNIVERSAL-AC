@@ -2,6 +2,10 @@ import ReservaPacientes from "../model/ReservaPacientes.js";
 import Pacientes from "../model/Pacientes.js";
 import NotificacionAgendamiento from "../services/notificacionAgendamiento.js";
 import { notificacionAgendamiento, notificacionActualizacionAgendamiento } from "../services/notificacionWhatsApp.js";
+import notificacionProfesionales from "../services/correoNotificacionProfesionales.js";
+import enviarCorreoProfesionales from "../services/correoNotificacionProfesionales.js";
+import Profesionales from "../model/Profesionales.js";
+import enviarCorreoProfesionalesActualizacion from "../services/CorreoActualizacionProfesional.js";
 
 function responderErrorReserva(res, error) {
     if (error?.code === "CONFLICTO_AGENDA") {
@@ -261,6 +265,22 @@ export default class ReservaPacienteController {
                     console.error("[WSP] Error actualización:", err.message);
                 });
 
+
+                const claseProfesionales = new Profesionales();
+                const correoEnArray = await claseProfesionales.seleccionarCorreoEspecificoPorProfesional(id_profesional);
+                const correoDelProfesional = correoEnArray[0].correoContacto;
+                let nombreDelPaciente = nombrePaciente + " " + apellidoPaciente;
+
+                enviarCorreoProfesionalesActualizacion(
+                    correoDelProfesional,
+                    nombreProfesional,
+                    nombreDelPaciente,
+                    fechaInicio,
+                    horaInicio
+                ).catch(err => {
+                    console.error("[MAIL] Error:", err.message);
+                });
+
                 return res.status(200).json({message: true});
             } else {
                 return res.status(200).json({message: false});
@@ -442,6 +462,20 @@ export default class ReservaPacienteController {
                     console.error("[WSP] Error:", err.message);
                 });
 
+                const claseProfesionales = new Profesionales();
+                const correoEnArray = await claseProfesionales.seleccionarCorreoEspecificoPorProfesional(id_profesional);
+                const correoDelProfesional = correoEnArray[0].correoContacto;
+                let nombreDelPaciente = nombrePaciente + " " + apellidoPaciente;
+
+                enviarCorreoProfesionales(
+                    correoDelProfesional,
+                    nombreProfesional,
+                    nombreDelPaciente,
+                    fechaInicio,
+                    horaInicio
+                    ).catch(err => {
+                    console.error("[MAIL] Error:", err.message);
+                });
                 return res.status(200).send({message: true})
             } else {
                 return res.status(200).send({message: false})
@@ -550,6 +584,14 @@ export default class ReservaPacienteController {
                     id_reserva: resultadoQuery.insertId
                 }).catch(err => {
                     console.error("[WSP] Error:", err.message);
+                });
+
+
+                const correoPruebas = `desarrollo.native.code@gmail.com`;
+                const nombreProfesional = `dr pruebitas`;
+
+                enviarCorreoProfesionales(correoPruebas, nombreProfesional).catch(err => {
+                    console.error("[MAIL PROFESIONAL] Error:", err.message);
                 });
 
                 return res.status(200).send({message: true})

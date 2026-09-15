@@ -20,51 +20,72 @@ export default class ProfesionalesController {
     //FUNCION PARA INSERTAR UN NUEVO PROFESIONAL
     static async insertarProfesionalController(req, res) {
         try{
-            const { nombreProfesional, descripcionProfesional, correo_profesional } = req.body;
-            if (!nombreProfesional || !descripcionProfesional) {
+            const {
+                nombreProfesional,
+                descripcionProfesional,
+                correoContacto,
+                numeroTelefono,
+                rutProfesional
+            } = req.body;
+
+            console.log(`PROFESIONALES ENVIANDOS DESDE EL ENDPOINT:`);
+            console.log(req.body);
+
+            if (!nombreProfesional || !descripcionProfesional || !correoContacto || !numeroTelefono || !rutProfesional ) {
                 return res.status(400).json({ message: "sindata" });
             }
 
-            const correo = normalizarCorreoProfesional(correo_profesional ?? "");
-            if (!correo.ok) {
-                return res.status(400).json({ message: "correoInvalido" });
-            }
-
             const profesionalClass = new Profesionales();
-            const resultado = await profesionalClass.insertarProfesionalModel(nombreProfesional, descripcionProfesional, correo.valor);
+            const resultado = await profesionalClass.insertarProfesionalModel(
+                nombreProfesional,
+                descripcionProfesional,
+                correoContacto,
+                numeroTelefono,
+                rutProfesional
+            );
             if (resultado.affectedRows > 0) {
                 res.status(200).json({ message: true });
             }else {
                 res.status(500).json({ message: false });
             }
         }catch (error) {
-            res.status(500).json({ message: "serverError" });
+            res.status(500).json({ message: "serverError" + error });
         }
 
     }
 
-    //FUNCION PARA ACTUALIZAR UN PROFESIONAL
     static async actualizarProfesionalController(req, res) {
         try{
-            const {nombreProfesional, descripcionProfesional, correo_profesional, id_profesional} = req.body;
-            if (!nombreProfesional || !descripcionProfesional || !id_profesional) {
+            const {
+                nombreProfesional,
+                descripcionProfesional,
+                correoContacto,
+                numeroTelefono,
+                rutProfesional,
+                id_profesional
+            } = req.body;
+
+            console.log(`PROFESIONALES ENVIANDOS DESDE EL ENDPOINT:`);
+            console.log(req.body);
+
+            if (!nombreProfesional ||
+                !descripcionProfesional ||
+                !id_profesional  ||
+                !correoContacto ||
+                !numeroTelefono ||
+                !rutProfesional ) {
                 return res.status(400).json({ message: "sindata" });
             }
 
-            // Si el body no trae correo_profesional, no se toca la columna (evita borrar
-            // un correo ya guardado cuando el frontend solo actualiza nombre/descripción).
-            const correoProvisto = Object.prototype.hasOwnProperty.call(req.body, 'correo_profesional');
-            let correoParaGuardar; // undefined = "no tocar la columna" para el model
-            if (correoProvisto) {
-                const correo = normalizarCorreoProfesional(correo_profesional ?? "");
-                if (!correo.ok) {
-                    return res.status(400).json({ message: "correoInvalido" });
-                }
-                correoParaGuardar = correo.valor;
-            }
-
             const profesionalClass = new Profesionales();
-            const resultado = await profesionalClass.actualizarProfesionalModel(nombreProfesional, descripcionProfesional, correoParaGuardar, id_profesional);
+            const resultado = await profesionalClass.actualizarProfesionalModel(
+                nombreProfesional,
+                descripcionProfesional,
+                correoContacto,
+                numeroTelefono,
+                rutProfesional,
+                id_profesional
+            );
 
             if (resultado.affectedRows > 0) {
                 res.status(200).json({ message: true });
