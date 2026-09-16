@@ -2,7 +2,7 @@ import DataBase from '../config/Database.js';
 import { enviarRecordatorio_1hora } from './notificacionWhatsApp.js';
 import { obtenerDatosEmpresaConfig } from './datosEmpresaConfig.js';
 import { sendPushToAll } from './pushService.js';
-import { construirCorreoBase, construirTablaDetalle, construirAviso, TEXTO_PRINCIPAL, TEXTO_SECUNDARIO } from './emailTemplateBase.js';
+import { construirCorreoBase, construirTablaDetalle, construirAviso, TEXTO_PRINCIPAL, TEXTO_SECUNDARIO, formatearHoraCorreo } from './emailTemplateBase.js';
 
 /**
  * SISTEMA DE RECORDATORIOS AUTOMÁTICOS DE CITAS
@@ -59,7 +59,7 @@ async function enviarCorreoRecordatorio({ email, nombrePaciente, apellidoPacient
       </p>
       ${construirTablaDetalle([
           { label: "Fecha", value: fecha },
-          { label: "Hora", value: hora },
+          { label: "Hora", value: formatearHoraCorreo(hora) },
           { label: "Lugar", value: direccionEmpresa }
       ])}
       ${construirAviso("Si no puede asistir, le agradeceremos avisar con anticipación para reprogramar su cita y liberar el cupo para otro paciente.")}

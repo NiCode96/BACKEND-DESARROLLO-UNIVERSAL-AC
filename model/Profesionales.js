@@ -89,7 +89,9 @@ export default class Profesionales {
     async seleccionarCorreoEspecificoPorProfesional(id_profesional) {
         try {
             const conexion = DataBase.getInstance();
-            const query = "SELECT correoContacto FROM profesionales WHERE id_profesional = ? AND estado_Profesional <> 0";
+            // Se incluye el nombre para que los correos al profesional no dependan de que
+            // el front lo mande en el body (llegaba vacio y se imprimia "Hola, .").
+            const query = "SELECT correoContacto, nombreProfesional FROM profesionales WHERE id_profesional = ? AND estado_Profesional <> 0";
             const params = [id_profesional];
             const resultado = await conexion.ejecutarQuery(query, params);
             if (resultado) {

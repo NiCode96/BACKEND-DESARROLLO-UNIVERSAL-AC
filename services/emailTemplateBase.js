@@ -125,3 +125,31 @@ export function construirCorreoBase({
 </body>
 </html>`;
 }
+
+/**
+ * Hora sin segundos: la base entrega "08:00:00" y en un correo basta "08:00".
+ */
+export function formatearHoraCorreo(hora) {
+    const valor = String(hora ?? '').trim();
+    if (!valor) return '-';
+
+    const match = valor.match(/^(\d{1,2}):(\d{2})/);
+    if (!match) return valor;
+
+    return `${match[1].padStart(2, '0')}:${match[2]}`;
+}
+
+/**
+ * RUT chileno con puntos y guion. El backend lo guarda sin formato ("152659873")
+ * y asi se imprimia en los correos.
+ */
+export function formatearRutCorreo(rut) {
+    const limpio = String(rut ?? '').replace(/[^0-9kK]/g, '').toUpperCase();
+    if (limpio.length < 2) return String(rut ?? '').trim() || '-';
+
+    const cuerpo = limpio.slice(0, -1);
+    const dv = limpio.slice(-1);
+    const conPuntos = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+    return `${conPuntos}-${dv}`;
+}

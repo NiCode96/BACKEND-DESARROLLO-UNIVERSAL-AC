@@ -3,7 +3,7 @@ import { obtenerDatosEmpresaConfig } from "./datosEmpresaConfig.js";
 import ReservaPacientes from "../model/ReservaPacientes.js";
 import Profesionales from "../model/Profesionales.js";
 import { generarICSBase64 } from "./icsUtils.js";
-import { construirCorreoBase, construirTablaDetalle, construirBoton, TEXTO_PRINCIPAL, TEXTO_SECUNDARIO } from "./emailTemplateBase.js";
+import { construirCorreoBase, construirTablaDetalle, construirBoton, TEXTO_PRINCIPAL, TEXTO_SECUNDARIO, formatearRutCorreo } from "./emailTemplateBase.js";
 
 function formatearMontoCorreo(monto) {
     const numero = Number(monto ?? 0);
@@ -157,7 +157,7 @@ function construirHtmlCorreoPaciente({
     const tabla = construirTablaDetalle([
         { label: "Paciente", value: normalizarTextoCorreo(nombrePaciente) },
         { label: "Profesional", value: normalizarTextoCorreo(nombreProfesional) },
-        { label: "RUT", value: normalizarTextoCorreo(rut) },
+        { label: "RUT", value: formatearRutCorreo(rut) },
         { label: "Teléfono", value: normalizarTextoCorreo(telefono) },
         { label: "Inicio", value: `${normalizarTextoCorreo(fechaInicio)} ${normalizarTextoCorreo(horaInicio)}` },
         { label: "Término", value: `${normalizarTextoCorreo(fechaFinalizacion)} ${normalizarTextoCorreo(horaFinalizacion)}` },
