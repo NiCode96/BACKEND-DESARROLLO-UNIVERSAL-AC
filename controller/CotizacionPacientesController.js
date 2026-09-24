@@ -195,6 +195,8 @@ export default class CotizacionPacientesController {
                 estado_cotizacion
             );
 
+            console.log(`seleccionar_cotizaciones_paciente_especifico_por_id`, respuesta);
+
             if (Array.isArray(respuesta) && respuesta.length > 0) {
                 return res.status(200).send(respuesta)
             }else{
