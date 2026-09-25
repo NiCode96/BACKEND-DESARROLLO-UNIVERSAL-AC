@@ -46,7 +46,6 @@ import envioCotizacionRoutes from "./view/envioCotizacionRoutes.js";
 import detalleCotizaciones from "./view/detalleCotizacionRoutes.js"
 import resenasRoutes from "./view/resenasRoutes.js";
 import healthMetricsRoutes from "./view/healthMetricsRoutes.js";
-import { asegurarEsquemaHealthMetrics } from "./services/healthMetricsSchema.js";
 
 
 
@@ -162,11 +161,6 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
     console.log(`BACKEND CORRIENDO SIN PROBLEMAS EN --->  http://localhost:${PORT}`);
-
-    // Crea registro_accesos si no existe. Este mismo codigo corre en ~50 bases
-    // distintas (una por clinica), asi que desplegar ES la migracion y no hay
-    // que acordarse de correrla cliente por cliente. Ver healthMetricsSchema.js.
-    asegurarEsquemaHealthMetrics();
 
     // CRON JOB: Ejecutar recordatorios automáticos cada 5 minutos
     console.log("[CRON] Iniciando cron job de recordatorios (cada 5 minutos)...");
