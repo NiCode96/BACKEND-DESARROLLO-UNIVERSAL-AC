@@ -13,12 +13,13 @@ export default class HealthMetricsController {
     // FUNCION QUE ENTREGA LAS METRICAS DE USO A NATIVECODE FINANCE
     static async obtenerMetricas(req, res) {
         try {
-            const [diasSinActividad, reservas, confirmaciones, fichasClinicas] =
+            const [diasSinActividad, reservas, confirmaciones, fichasClinicas, pacientes] =
                 await Promise.all([
                     calcularDiasSinActividad(),
                     contarReservas(),
                     calcularConfirmaciones(),
                     contarFichas(),
+                    contarPacientes(),
                 ]);
 
             res.status(200).json({
@@ -27,6 +28,7 @@ export default class HealthMetricsController {
                 reservas,
                 confirmaciones,
                 fichasClinicas,
+                pacientes,
             });
         } catch (error) {
             console.error('[HEALTH METRICS]', error.message);
@@ -140,6 +142,24 @@ async function calcularConfirmaciones() {
 async function contarFichas() {
     const filas = await db().ejecutarQuery(
         `SELECT COUNT(*) AS total FROM fichaClinica WHERE estadoFicha <> 0`, []
+    );
+    return Number(filas?.[0]?.total || 0);
+}
+
+/**
+ * Métrica 6 — total acumulado de pacientes registrados.
+ *
+ * Señal más directa que las fichas: registrar un paciente significa que el
+ * profesional está atendiendo gente de verdad, no solo llenando la agenda.
+ * Una clínica puede tener muchas reservas y pocos pacientes (agenda inflada,
+ * o reservas que nunca se concretan); lo contrario casi no ocurre.
+ *
+ * Mismo criterio que reservas y fichas: acumulado, porque un cliente nuevo
+ * arranca con la base en cero y ese total ES su actividad desde que empezó.
+ */
+async function contarPacientes() {
+    const filas = await db().ejecutarQuery(
+        `SELECT COUNT(*) AS total FROM pacienteDatos`, []
     );
     return Number(filas?.[0]?.total || 0);
 }
