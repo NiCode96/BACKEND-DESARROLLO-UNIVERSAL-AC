@@ -108,13 +108,18 @@ async function contarReservas() {
  * de la CITA) ya existe. Solo cuentan citas que YA OCURRIERON: una reserva para
  * la semana que viene sigue en 'reservada' y contarla hundiría el porcentaje.
  *
+ * Cuenta 'asiste' Y 'confirmada'. No todas las clínicas marcan la asistencia
+ * real al final de la cita — muchas solo confirman antes — así que exigir
+ * 'asiste' castigaría a clientes que sí están usando bien la plataforma, solo
+ * que con otro flujo de trabajo.
+ *
  * Estados reales en la base: reservada, confirmada, anulada, no asiste, asiste.
  * La columna es texto libre sin validación, por eso se compara con LOWER/TRIM.
  */
 async function calcularConfirmaciones() {
     const filas = await db().ejecutarQuery(`
         SELECT COUNT(*) AS total,
-               SUM(LOWER(TRIM(estadoReserva)) = 'asiste') AS asistieron
+               SUM(LOWER(TRIM(estadoReserva)) IN ('asiste', 'confirmada')) AS asistieron
           FROM reservaPacientes
          WHERE ${SOLO_VISIBLES}
            AND fechaInicio >= CURDATE() - INTERVAL 30 DAY
