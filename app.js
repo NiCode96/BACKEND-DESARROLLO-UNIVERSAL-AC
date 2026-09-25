@@ -50,6 +50,12 @@ import healthMetricsRoutes from "./view/healthMetricsRoutes.js";
 
 
 const app = express();
+
+// El backend corre detras de nginx, asi que req.ip seria siempre la IP del
+// proxy (127.0.0.1). Con esto Express lee X-Forwarded-For y queda la IP real
+// del cliente — necesario para que registro_accesos sirva como evidencia de
+// auditoria y no solo como senal de actividad.
+app.set('trust proxy', 1);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use(express.json());
