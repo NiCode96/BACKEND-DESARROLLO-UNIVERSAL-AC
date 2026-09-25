@@ -45,6 +45,7 @@ import cotizacionPacienteRoutes from "./view/cotizacionPacienteRoutes.js";
 import envioCotizacionRoutes from "./view/envioCotizacionRoutes.js";
 import detalleCotizaciones from "./view/detalleCotizacionRoutes.js"
 import resenasRoutes from "./view/resenasRoutes.js";
+import healthMetricsRoutes from "./view/healthMetricsRoutes.js";
 
 
 
@@ -105,6 +106,11 @@ app.use("/cotizacionPaciente", cotizacionPacienteRoutes);
 app.use("/detalleCotizacion", detalleCotizaciones);
 app.use("/envioCotizacionCorreo", envioCotizacionRoutes);
 app.use("/notificaciones", notificacionesPushRoutes);
+
+// Métricas de uso para el Health Score de NativeCode Finance.
+// GET /health-metrics -> protegido con HEALTH_METRICS_API_KEY (lo llama el cron de Finance)
+// POST /health-metrics/acceso -> lo llama el front al entrar; registra el acceso.
+app.use("/health-metrics", healthMetricsRoutes);
 
 
 // Ruta para ejecutar recordatorios manualmente (protegido con TEST_API_KEY)
