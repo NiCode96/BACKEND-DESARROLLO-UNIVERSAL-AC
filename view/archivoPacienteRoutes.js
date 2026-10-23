@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import ArchivoPacienteController from "../controller/ArchivoPacienteController.js";
-
+//algo
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
