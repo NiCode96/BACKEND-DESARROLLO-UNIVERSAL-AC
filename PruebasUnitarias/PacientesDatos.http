@@ -1,5 +1,5 @@
 ### Seleccionar todos los pacientes
-GET http://localhost:3001/pacientes/
+GET http://localhost:3010/pacientes/
 
 
 ### Seleccionar paciente especifico por id

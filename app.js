@@ -1,3 +1,7 @@
+// Carga del .env en la primera línea del primer módulo: varios archivos leen
+// process.env al evaluarse (ej. el cliente de Twilio en services/telemedicina.js)
+// y no debe depender del orden de imports que Database.js se cargue antes.
+import 'dotenv/config';
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -8,7 +12,10 @@ import tituloRoutes from "./view/tituloRoutes.js";
 import textosRoutes from "./view/textosRoutes.js";
 import categoriaRoutes from "./view/categoriaRoutes.js";
 import publicacionesRoutes from "./view/publicacionesRoutes.js";
-import contactoRouter from "./view/contactoRoutes.js";
+// Grupo sin uso (2026-10-23): el formulario publico de contacto envia por
+// /correo/contacto. Nadie consume /contacto; se deja de montar. El controller
+// queda en el repo por si se necesita reactivar.
+// import contactoRouter from "./view/contactoRoutes.js";
 import mercadoPagoRouter from "./view/mercadoPagoRoutes.js";
 import pedidosRoutes from "./view/pedidosRoutes.js";
 import cuponesRoutes from "./view/cuponesRoutes.js";
@@ -46,15 +53,15 @@ import envioCotizacionRoutes from "./view/envioCotizacionRoutes.js";
 import detalleCotizaciones from "./view/detalleCotizacionRoutes.js"
 import resenasRoutes from "./view/resenasRoutes.js";
 import healthMetricsRoutes from "./view/healthMetricsRoutes.js";
+import telemedicinaRoutes from "./view/telemedicinaRoutes.js";
+import { exigirSesionClerk } from "./middleware/exigirSesionClerk.js";
+
 
 
 
 const app = express();
 
-// El backend corre detras de nginx, asi que req.ip seria siempre la IP del
-// proxy (127.0.0.1). Con esto Express lee X-Forwarded-For y queda la IP real
-// del cliente — necesario para que registro_accesos sirva como evidencia de
-// auditoria y no solo como senal de actividad.
+
 app.set('trust proxy', 1);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,62 +71,60 @@ app.use(express.static(path.join(__dirname, "public")));
 
 
 const corsConfig = {
-    origin: true,           // refleja el origin de la petición (permite cualquier origen)
-    credentials: true,      // permite envío de cookies; poner false si no quieres cookies
+    origin: true,
+    credentials: true,
     methods: ['GET','POST','PUT','DELETE','OPTIONS'],
     allowedHeaders: ['Content-Type','Authorization']
 };
 
 app.use(cors(corsConfig));
-
 app.get("/", (req, res) => { res.send("Hola mundo"); });
 app.use("/pedidos", pedidosRoutes);
 app.use("/bloqueoAgenda", bloqueoAgendaRoutes);
-app.use("/odontograma", odontogramaRoutes);
+app.use("/odontograma", exigirSesionClerk, odontogramaRoutes);
 app.use("/profesionales", profesionalesRoutes);
-app.use("/distribucionProfesional", DistribucionProfesionalRoutes);
+app.use("/distribucionProfesional", exigirSesionClerk, DistribucionProfesionalRoutes);
 app.use("/resenas", resenasRoutes);
-app.use("/serviciosProfesionales", serviciosProfesionalesRoutes);
+app.use("/serviciosProfesionales", exigirSesionClerk, serviciosProfesionalesRoutes);
 app.use("/tarifasProfesional", tarifasProfesionalRoutes);
-app.use("/especificacionProducto", especificacionProductoRoutes);
-app.use("/subsubcategorias", subSubCategoriaRoutes);
+app.use("/especificacionProducto", exigirSesionClerk, especificacionProductoRoutes);
+app.use("/subsubcategorias", exigirSesionClerk, subSubCategoriaRoutes);
 app.use("/carruselPortada", carruselPortadaRoutes);
-app.use('/pacientes', pacienteRoutes);
-app.use('/ficha', fichaRoutes);
+app.use("/pacientes", exigirSesionClerk, pacienteRoutes);
+app.use('/ficha', exigirSesionClerk, fichaRoutes);
 app.use("/reservaPacientes", reservaPacienteRoutes);
-app.use("/cloudflare", cloudflareRoutes);
+app.use("/cloudflare", exigirSesionClerk, cloudflareRoutes);
 app.use("/correo", correosRoutes);
-app.use("/cupon", cuponesRoutes);
+app.use("/cupon", exigirSesionClerk, cuponesRoutes);
 app.use("/pagosMercadoPago", mercadoPagoRouter);
 app.use("/producto", productoRoute);
 app.use("/titulo", tituloRoutes);
-app.use("/textos", textosRoutes);
-app.use("/categorias", categoriaRoutes);
-app.use("/subcategorias", subCategoriasRoutes);
+app.use("/textos", exigirSesionClerk, textosRoutes);
+app.use("/categorias", exigirSesionClerk, categoriaRoutes);
+app.use("/subcategorias", exigirSesionClerk, subCategoriasRoutes);
 app.use("/publicaciones", publicacionesRoutes);
-app.use('/contacto', contactoRouter );
 app.use("/publicacionesTituloDetalle", publicacionesTituloDescripcionRoutes);
 app.use('/notificacion', notificacionAgendamientoRoutes);
-app.use('/fichaplantilla', fichaPlantillaRoutes);
-app.use('/fichaCategoria', fichaCategoriaRoutes);
-app.use('/fichaCampo', fichaCampoRoutes);
-app.use("/examenes", examenesRoutes);
-app.use("/recetas", recetasPacientesRoutes);
-app.use("/datosempresa", datosEmpresaRoutes);
-app.use("/archivoPaciente", archivoPacienteRoutes);
-app.use("/persistence", persistence);
-app.use("/cotizacionPaciente", cotizacionPacienteRoutes);
-app.use("/detalleCotizacion", detalleCotizaciones);
-app.use("/envioCotizacionCorreo", envioCotizacionRoutes);
-app.use("/notificaciones", notificacionesPushRoutes);
+app.use('/fichaplantilla', exigirSesionClerk, fichaPlantillaRoutes);
+app.use('/fichaCategoria', exigirSesionClerk, fichaCategoriaRoutes);
+app.use('/fichaCampo', exigirSesionClerk, fichaCampoRoutes);
+app.use("/examenes", exigirSesionClerk, examenesRoutes);
+app.use("/recetas", exigirSesionClerk, recetasPacientesRoutes);
 
-// Métricas de uso para el Health Score de NativeCode Finance.
-// GET /health-metrics -> protegido con HEALTH_METRICS_API_KEY (lo llama el cron de Finance)
-// POST /health-metrics/acceso -> lo llama el front al entrar; registra el acceso.
+app.use("/datosempresa", datosEmpresaRoutes);
+app.use("/archivoPaciente", exigirSesionClerk, archivoPacienteRoutes);
+
+app.use("/persistence", persistence);
+app.use("/cotizacionPaciente", exigirSesionClerk, cotizacionPacienteRoutes);
+app.use("/detalleCotizacion", exigirSesionClerk, detalleCotizaciones);
+app.use("/envioCotizacionCorreo", exigirSesionClerk, envioCotizacionRoutes);
+app.use("/notificaciones", exigirSesionClerk, notificacionesPushRoutes);
+app.use("/telemedicina", exigirSesionClerk, telemedicinaRoutes);
+
+
 app.use("/health-metrics", healthMetricsRoutes);
 
 
-// Ruta para ejecutar recordatorios manualmente (protegido con TEST_API_KEY)
 app.get('/recordatorios/ejecutar', async (req, res) => {
     try {
         const apiKey = req.headers['x-api-key'];

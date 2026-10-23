@@ -1,0 +1,3 @@
+### POST CREAR SALA DE TELEMEDICINA
+POST http://localhost:3010/telemedicina/nuevaSala
+
