@@ -1,8 +1,9 @@
 import {Router} from 'express';
+import { exigirSesionClerk } from "../middleware/exigirSesionClerk.js";
 
 import TelemedicinaController from "../controller/TelemedicinaController.js";
 const router = Router();
-// POST: crear sala tiene efectos (recurso de pago en Twilio); no debe ser GET
-router.post('/nuevaSala', TelemedicinaController.nuevaSalaTelemedicina);
+router.post('/nuevaSala', exigirSesionClerk, TelemedicinaController.nuevaSalaTelemedicina);
+router.post('/tokenSala', TelemedicinaController.nuevaTokenSala);
 
 export default router;

@@ -119,7 +119,7 @@ app.use("/cotizacionPaciente", exigirSesionClerk, cotizacionPacienteRoutes);
 app.use("/detalleCotizacion", exigirSesionClerk, detalleCotizaciones);
 app.use("/envioCotizacionCorreo", exigirSesionClerk, envioCotizacionRoutes);
 app.use("/notificaciones", exigirSesionClerk, notificacionesPushRoutes);
-app.use("/telemedicina", exigirSesionClerk, telemedicinaRoutes);
+app.use("/telemedicina", telemedicinaRoutes);
 
 
 app.use("/health-metrics", healthMetricsRoutes);
