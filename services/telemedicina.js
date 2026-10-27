@@ -3,6 +3,11 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 const DURACION_INVITACION_MS = 4 * 60 * 60 * 1000;
 
+// Duración máxima de la videollamada. Se aplica dos veces: en la sala
+// (maxParticipantDuration, corte a nivel de Twilio) y en el token (ttl,
+// válido solo ese tiempo desde que la persona entra).
+const DURACION_MAXIMA_LLAMADA_SEG = 45 * 60;
+
 function obtenerFirmaInvitacion(payload) {
     const secret = process.env.TWILIO_API_SECRET;
     if (!secret) throw new Error("Falta configurar TWILIO_API_SECRET");
@@ -25,9 +30,12 @@ const { AccessToken } = twilio.jwt;
 
 export default class TelemedicinaService {
 
-    generarInvitacion(nombreSala) {
+    generarInvitacion(nombreSala, nombreProfesional) {
         const payload = Buffer.from(JSON.stringify({
             nombreSala,
+            // Va dentro del payload firmado: la página del paciente puede
+            // leerlo para mostrar el encabezado, pero no alterarlo.
+            nombreProfesional: nombreProfesional || undefined,
             expira: Date.now() + DURACION_INVITACION_MS
         })).toString("base64url");
         return `${payload}.${obtenerFirmaInvitacion(payload)}`;
@@ -60,7 +68,7 @@ export default class TelemedicinaService {
             process.env.TWILIO_API_SECRET,
             {
                 identity: identity,
-                ttl: 4 * 60 * 60
+                ttl: DURACION_MAXIMA_LLAMADA_SEG
             }
         );
 
@@ -94,6 +102,7 @@ export default class TelemedicinaService {
                 uniqueName: nombreSala,
                 type: "group",
                 maxParticipants: 2,
+                maxParticipantDuration: DURACION_MAXIMA_LLAMADA_SEG,
                 recordParticipantsOnConnect: false
 
             });

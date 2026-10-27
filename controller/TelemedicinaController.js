@@ -10,8 +10,13 @@ export default class TelemedicinaController {
         try {
             const telemedicinaService = new TelemedicinaService();
             const nombreSala = `telemedicina-${randomUUID()}`;
+            // Nombre del profesional que se muestra en la página del paciente;
+            // viaja dentro de la invitación firmada.
+            const nombreProfesional = typeof req.body?.nombreProfesional === "string"
+                ? req.body.nombreProfesional.trim().slice(0, 80)
+                : "";
             const respuestaService = await telemedicinaService.crearSala(nombreSala);
-            const invitacion = telemedicinaService.generarInvitacion(nombreSala);
+            const invitacion = telemedicinaService.generarInvitacion(nombreSala, nombreProfesional);
 
             console.log("############### CONTROLLER : FUNCION LLAMADA --> nuevaSalaTelemedicina");
 
