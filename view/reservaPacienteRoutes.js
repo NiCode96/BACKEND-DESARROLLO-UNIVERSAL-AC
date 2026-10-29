@@ -27,6 +27,8 @@ router.post("/actualizarReservacion", ReservaPacienteController.actualizarInform
 router.post("/seleccionarPorProfesional", ReservaPacienteController.seleccionarReservaSegunId_Profesional);
 router.post("/insertarReservasMultiples", ReservaPacienteController.insertarReservasMultiples); // INSERTAR PACIENTE SIN FICHA PARA CAMBIARA MODO FICHA DEBE CAMBIARSE EL METODO
 router.post("/insertar", ReservaPacienteController.insertarReservaPaciente);
+router.post("/actualizarComentario", ReservaPacienteController.actualizarComentarioReserva);
+router.post("/estadisticaPorPrevision", ReservaPacienteController.estadisticaPorPrevision);
 
 
 

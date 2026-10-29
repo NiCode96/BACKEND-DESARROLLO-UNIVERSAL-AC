@@ -40,3 +40,66 @@ Content-Type: application/json
   "id_profesional": 25
 }
 
+
+
+
+### ── PREVISIÓN Y COMENTARIO (requerimiento 28-10-2026) ──
+### Las rutas con sesión necesitan el JWT de Clerk: copiarlo desde el navegador
+### (pestaña Red, cabecera Authorization) a la variable de abajo.
+@token = PEGAR_JWT_DE_CLERK
+
+### 1. Crear con ambos campos -> guarda FONASA y el comentario
+POST http://localhost:3001/reservaPacientes/insertar
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nombrePaciente": "Juan", "apellidoPaciente": "Pérez", "rut": "12345678-9", "telefono": "+56912345678", "email": "",
+  "fechaInicio": "2026-11-07", "horaInicio": "10:00:00", "fechaFinalizacion": "2026-11-07", "horaFinalizacion": "10:30:00",
+  "monto_reserva": "20000", "motivo_reserva": "Control", "estadoReserva": "reservada", "id_profesional": 46,
+  "prevision": "FONASA", "comentario": "Trae exámenes"
+}
+
+### 2. Crear sin los campos -> ambos quedan 'No indicado'
+POST http://localhost:3001/reservaPacientes/insertar
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nombrePaciente": "Ana", "apellidoPaciente": "Soto", "rut": "11111111-1", "telefono": "+56911111111", "email": "",
+  "fechaInicio": "2026-11-07", "horaInicio": "11:00:00", "fechaFinalizacion": "2026-11-07", "horaFinalizacion": "11:30:00",
+  "monto_reserva": "20000", "motivo_reserva": "Control", "estadoReserva": "reservada", "id_profesional": 46
+}
+
+### 3. Previsión fuera del catálogo -> 400 { message: "prevision-invalida" } (no inserta)
+POST http://localhost:3001/reservaPacientes/insertar
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nombrePaciente": "Luis", "apellidoPaciente": "Rojas", "rut": "22222222-2", "telefono": "+56922222222", "email": "",
+  "fechaInicio": "2026-11-07", "horaInicio": "12:00:00", "fechaFinalizacion": "2026-11-07", "horaFinalizacion": "12:30:00",
+  "monto_reserva": "20000", "motivo_reserva": "Control", "estadoReserva": "reservada", "id_profesional": 46,
+  "prevision": "BANMEDICA"
+}
+
+### 4. Editar solo el comentario (lápiz del Panel de Reservaciones)
+POST http://localhost:3001/reservaPacientes/actualizarComentario
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "id_reserva": 586, "comentario": "Llega 10 minutos antes" }
+
+### 5. Estadística por previsión del período -> { total, distribucion: [...] }
+POST http://localhost:3001/reservaPacientes/estadisticaPorPrevision
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "fechaInicio": "2026-10-01", "fechaFinalizacion": "2026-10-31" }
+
+### 6. Rango invertido -> 400 { message: "rango-invalido" }
+POST http://localhost:3001/reservaPacientes/estadisticaPorPrevision
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "fechaInicio": "2026-10-31", "fechaFinalizacion": "2026-10-01" }

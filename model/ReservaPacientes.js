@@ -1,4 +1,5 @@
 import DataBase from "../config/Database.js";
+import { VALOR_NO_INDICADO } from "../services/camposReserva.js";
 
 const LOCK_TIMEOUT_SECONDS = 10;
 const CODIGO_CONFLICTO_AGENDA = "CONFLICTO_AGENDA";
@@ -185,7 +186,9 @@ export default class ReservaPacientes {
         motivo_reserva,
         estadoReserva,
         id_profesional,
-        id_reserva) {
+        id_reserva,
+        prevision = null,
+        comentario = null) {
         const {connection, lockKey} = await this.obtenerConexionConBloqueoAgenda(id_profesional);
 
         try {
@@ -207,8 +210,9 @@ export default class ReservaPacientes {
             }
 
 
-            const query = "UPDATE reservaPacientes SET nombrePaciente = ? , apellidoPaciente = ?, rut = ? , telefono = ? , email = ? , fechaInicio = ?  , horaInicio = ? , fechaFinalizacion = ? , horaFinalizacion = ? ,monto_reserva = ? , motivo_reserva = ?, estadoReserva = ? , id_profesional = ? , recordatorio12h = 0, recordatorio6h = 0, wspRecordatorio12h = 0, wspRecordatorio6h = 0, wspRecordatorio1h = 0 WHERE id_reserva = ?";
-            const params = [nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, id_profesional, id_reserva];
+            // prevision/comentario en null = el cliente no los envió: COALESCE conserva lo guardado.
+            const query = "UPDATE reservaPacientes SET nombrePaciente = ? , apellidoPaciente = ?, rut = ? , telefono = ? , email = ? , fechaInicio = ?  , horaInicio = ? , fechaFinalizacion = ? , horaFinalizacion = ? ,monto_reserva = ? , motivo_reserva = ?, estadoReserva = ? , id_profesional = ? , prevision = COALESCE(?, prevision), comentario = COALESCE(?, comentario), recordatorio12h = 0, recordatorio6h = 0, wspRecordatorio12h = 0, wspRecordatorio6h = 0, wspRecordatorio1h = 0 WHERE id_reserva = ?";
+            const params = [nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, id_profesional, prevision, comentario, id_reserva];
             const [resultadoQuery] = await connection.query(query, params);
             return resultadoQuery;
         } finally {
@@ -272,7 +276,7 @@ export default class ReservaPacientes {
 
 
     //METODO PARA INSERTAR NUEVAS CITAS MEDICAS
-    async insertarReservaPaciente(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, id_profesional) {
+    async insertarReservaPaciente(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, id_profesional, prevision = VALOR_NO_INDICADO, comentario = VALOR_NO_INDICADO) {
         const {connection, lockKey} = await this.obtenerConexionConBloqueoAgenda(id_profesional);
 
         try {
@@ -292,8 +296,8 @@ export default class ReservaPacientes {
                 );
             }
 
-            const query = "INSERT INTO reservaPacientes(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio,fechaFinalizacion, horaFinalizacion,monto_reserva,motivo_reserva, estadoReserva, id_profesional) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
-            const params = [nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, id_profesional];
+            const query = "INSERT INTO reservaPacientes(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio,fechaFinalizacion, horaFinalizacion,monto_reserva,motivo_reserva, estadoReserva, id_profesional, prevision, comentario) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            const params = [nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, id_profesional, prevision, comentario];
             const [resultadoQuery] = await connection.query(query, params);
             return resultadoQuery;
         } finally {
@@ -447,7 +451,9 @@ export default class ReservaPacientes {
         estadoReserva,
         preference_id,
         estadoPeticion,
-        id_profesional) {
+        id_profesional,
+        prevision = VALOR_NO_INDICADO,
+        comentario = VALOR_NO_INDICADO) {
         const {connection, lockKey} = await this.obtenerConexionConBloqueoAgenda(id_profesional);
         try {
             const disponible = await this.validarDisponibilidadEnConexion(
@@ -468,8 +474,8 @@ export default class ReservaPacientes {
 
             const fechaActualMas10Minutos = new Date(Date.now() + 10 * 60 * 1000);
 
-            const query = `INSERT INTO reservaPacientes(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio,fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, preference_id, estadoPeticion,id_profesional, fechaExpiracionPago) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-            const params = [nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion,monto_reserva, motivo_reserva, estadoReserva, preference_id, estadoPeticion, id_profesional, fechaActualMas10Minutos];
+            const query = `INSERT INTO reservaPacientes(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio,fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, preference_id, estadoPeticion,id_profesional, fechaExpiracionPago, prevision, comentario) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+            const params = [nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion,monto_reserva, motivo_reserva, estadoReserva, preference_id, estadoPeticion, id_profesional, fechaActualMas10Minutos, prevision, comentario];
             const [resultadoQuery] = await connection.query(query, params);
             return resultadoQuery;
         } finally {
@@ -500,6 +506,8 @@ reservaPacientes.estadoReserva,
 reservaPacientes.estadoPeticion,
 reservaPacientes.preference_id,
 reservaPacientes.id_reserva,
+reservaPacientes.prevision,
+reservaPacientes.comentario,
 
 profesionales.id_profesional,
 profesionales.nombreProfesional
@@ -592,6 +600,35 @@ reservaPacientes.preference_id = ?`;
             console.log(error);
             throw new Error(error);
         }
+    }
+
+
+    //METODO PARA ACTUALIZAR SOLO EL COMENTARIO DE UNA CITA (lápiz del Panel de Reservaciones)
+    async actualizarComentario(comentario, id_reserva) {
+        const conexion = DataBase.getInstance();
+        const query = "UPDATE reservaPacientes SET comentario = ? WHERE id_reserva = ? AND estadoPeticion <> 0";
+        const params = [comentario, id_reserva];
+        return await conexion.ejecutarQuery(query, params);
+    }
+
+
+    /*
+    =====> contarReservasPorPrevision(fechaInicio, fechaFinalizacion) <=======
+    ESTADISTICA DEL PANEL FINANCIERO: CANTIDAD DE RESERVAS POR PREVISION EN EL PERIODO.
+    Usa el MISMO universo que el KPI "reservas del período" del panel:
+    estadoPeticion = 1 (excluye slots libres y pagos en curso) y fechaInicio dentro
+    del rango, sin filtrar por estadoReserva. Así los porcentajes calzan con ese total.
+    */
+    async contarReservasPorPrevision(fechaInicio, fechaFinalizacion) {
+        const conexion = DataBase.getInstance();
+        const query = `
+            SELECT COALESCE(NULLIF(prevision, ''), ?) AS prevision, COUNT(*) AS cantidad
+            FROM reservaPacientes
+            WHERE estadoPeticion = 1
+              AND fechaInicio BETWEEN ? AND ?
+            GROUP BY COALESCE(NULLIF(prevision, ''), ?)`;
+        const params = [VALOR_NO_INDICADO, fechaInicio, fechaFinalizacion, VALOR_NO_INDICADO];
+        return await conexion.ejecutarQuery(query, params);
     }
 
 }

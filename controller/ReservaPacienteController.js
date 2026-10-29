@@ -5,8 +5,24 @@ import { notificacionAgendamiento, notificacionActualizacionAgendamiento } from 
 import enviarCorreoProfesionales from "../services/correoNotificacionProfesionales.js";
 import Profesionales from "../model/Profesionales.js";
 import enviarCorreoProfesionalesActualizacion from "../services/correoActualizacionProfesional.js";
+import {
+    leerCamposOpcionalesReserva,
+    normalizarComentarioReserva,
+    calcularDistribucionPrevision,
+    esFechaCivilValida,
+    CODIGO_PREVISION_INVALIDA,
+    CODIGO_COMENTARIO_INVALIDO,
+} from "../services/camposReserva.js";
 
 function responderErrorReserva(res, error) {
+    if (error?.code === CODIGO_PREVISION_INVALIDA) {
+        return res.status(400).send({message: "prevision-invalida"});
+    }
+
+    if (error?.code === CODIGO_COMENTARIO_INVALIDO) {
+        return res.status(400).send({message: "comentario-invalido"});
+    }
+
     if (error?.code === "CONFLICTO_AGENDA") {
         return res.status(409).send({message: "conflicto"});
     }
@@ -208,8 +224,11 @@ export default class ReservaPacienteController {
                 return res.status(404).send({message: 'sindata'})
             }
 
+            // Ausentes = null = se conserva lo guardado (clientes que no envían estos campos).
+            const {prevision, comentario} = leerCamposOpcionalesReserva(req.body, {esActualizacion: true});
+
             const claseReservaPaciente = new ReservaPacientes();
-            const resultadoQuery = await claseReservaPaciente.actualizarReserva(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion,monto_reserva, motivo_reserva, estadoReserva, id_profesional, id_reserva);
+            const resultadoQuery = await claseReservaPaciente.actualizarReserva(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion,monto_reserva, motivo_reserva, estadoReserva, id_profesional, id_reserva, prevision, comentario);
 
             if (resultadoQuery.affectedRows > 0) {
                 const correoNormalizado = email && String(email).trim() ? String(email).trim() : null;
@@ -393,6 +412,9 @@ export default class ReservaPacienteController {
                 return res.status(400).send({message: "sindata"})
             }
 
+            // Opcionales: vacíos o ausentes quedan como 'No indicado'.
+            const {prevision, comentario} = leerCamposOpcionalesReserva(req.body);
+
             const claseReservaPaciente = new ReservaPacientes();
             const resultadoQuery = await claseReservaPaciente.insertarReservaPaciente(
                 nombrePaciente,
@@ -407,7 +429,9 @@ export default class ReservaPacienteController {
                 monto_reserva,
                 motivo_reserva,
                 estadoReserva,
-                id_profesional)
+                id_profesional,
+                prevision,
+                comentario)
 
             if (resultadoQuery.affectedRows > 0) {
                 if (correoNormalizado) {
@@ -682,6 +706,9 @@ export default class ReservaPacienteController {
                 return res.status(400).send({message: "sindata"})
             }
 
+            // Opcionales: vacíos o ausentes quedan como 'No indicado'.
+            const {prevision, comentario} = leerCamposOpcionalesReserva(req.body);
+
             const claseReservaPaciente = new ReservaPacientes();
             const resultadoQuery = await claseReservaPaciente.insertarReservaPaciente(
                 nombrePaciente,
@@ -696,7 +723,9 @@ export default class ReservaPacienteController {
                 monto_reserva,
                 motivo_reserva,
                 estadoReserva,
-                id_profesional)
+                id_profesional,
+                prevision,
+                comentario)
 
             if (resultadoQuery.affectedRows > 0) {
                 NotificacionAgendamiento.enviarCorreoConfirmacionEquipo({
@@ -738,6 +767,67 @@ export default class ReservaPacienteController {
 
         } catch (error) {
             return responderErrorReserva(res, error);
+        }
+    }
+
+
+    // Lápiz del Panel de Reservaciones: cambia SOLO el comentario de la cita.
+    static async actualizarComentarioReserva(req, res) {
+        try {
+            const {id_reserva} = req.body;
+            const id = Number(id_reserva);
+
+            if (!Number.isInteger(id) || id <= 0) {
+                return res.status(400).send({message: 'sindata'});
+            }
+
+            const comentario = normalizarComentarioReserva(req.body?.comentario);
+
+            const claseReservaPaciente = new ReservaPacientes();
+            const resultadoQuery = await claseReservaPaciente.actualizarComentario(comentario, id);
+
+            if (resultadoQuery.affectedRows > 0) {
+                // Bitácora: quién y sobre qué cita. El texto no se registra porque
+                // puede contener datos de salud.
+                console.info("[AUDITORIA] reserva.comentario.actualizado", {
+                    id_reserva: id,
+                    usuario: req.sesionClerk?.sub ?? null,
+                    fecha: new Date().toISOString(),
+                });
+                return res.status(200).json({message: true, comentario});
+            } else {
+                return res.status(404).json({message: false});
+            }
+
+        } catch (error) {
+            return responderErrorReserva(res, error);
+        }
+    }
+
+
+    // Panel financiero: distribución de reservas por previsión en un período.
+    static async estadisticaPorPrevision(req, res) {
+        try {
+            const {fechaInicio, fechaFinalizacion} = req.body;
+
+            if (!esFechaCivilValida(fechaInicio) || !esFechaCivilValida(fechaFinalizacion)) {
+                return res.status(400).send({message: 'sindata'});
+            }
+
+            // Fechas civiles AAAA-MM-DD: compararlas como texto equivale a compararlas en el calendario.
+            if (fechaInicio > fechaFinalizacion) {
+                return res.status(400).send({message: 'rango-invalido'});
+            }
+
+            const claseReservaPaciente = new ReservaPacientes();
+            const filas = await claseReservaPaciente.contarReservasPorPrevision(fechaInicio, fechaFinalizacion);
+            const {total, distribucion} = calcularDistribucionPrevision(Array.isArray(filas) ? filas : []);
+
+            return res.status(200).json({fechaInicio, fechaFinalizacion, total, distribucion});
+
+        } catch (error) {
+            console.error(error);
+            return res.status(500).send({message: 'error'});
         }
     }
 

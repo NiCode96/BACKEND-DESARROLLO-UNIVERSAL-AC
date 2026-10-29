@@ -99,3 +99,5 @@ logs/
 uploads/
 public/uploads/
 temp_uploads/
+# Migraciones de la base: sí se versionan (auditoría de cambios de esquema)
+!migraciones/*.sql

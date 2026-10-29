@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:concurrencia-reserva": "node scripts/test_concurrencia_reservas.mjs",
-    "test:concurrencia-actualizacion-reserva": "node scripts/test_concurrencia_actualizacion_reservas.mjs"
+    "test:concurrencia-actualizacion-reserva": "node scripts/test_concurrencia_actualizacion_reservas.mjs",
+    "test:reservas": "node --test pruebas/reservas/*.test.mjs"
   },
   "keywords": [],
   "author": "",

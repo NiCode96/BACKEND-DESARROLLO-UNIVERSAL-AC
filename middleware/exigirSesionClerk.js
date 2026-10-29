@@ -9,7 +9,9 @@ export const exigirSesionClerk = async (req, res, next) => {
             return res.status(401).json({ message: "USUARIO-SIN-AUTENTICACION" });
         }
 
-        await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY });
+        // Se conserva la sesión verificada para que los controladores puedan
+        // registrar en la bitácora quién hizo cada cambio (req.sesionClerk.sub).
+        req.sesionClerk = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY });
 
         return next();
     } catch (error) {

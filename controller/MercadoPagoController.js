@@ -6,6 +6,7 @@ import * as mpNamed from "mercadopago";
 import { notificacionAgendamiento, notificacionActualizacionAgendamiento } from "../services/notificacionWhatsApp.js";
 import MercadoPersistence from "../model/MercadoPersisntence.js"
 import Profesionales from "../model/Profesionales.js";
+import { leerCamposOpcionalesReserva, CODIGO_PREVISION_INVALIDA } from "../services/camposReserva.js";
 
 dotenv.config();
 
@@ -80,6 +81,16 @@ export const createOrder = async (req, res) => {
 
         if (!totalPago || Number(totalPago) <= 0) {
             return res.status(400).json({ message: 'datoinvalido' });
+        }
+
+        // Previsión/comentario opcionales: se validan ANTES de crear la orden en
+        // Mercado Pago, para no dejar una preferencia de pago sin reserva.
+        let camposOpcionales;
+        try {
+            camposOpcionales = leerCamposOpcionalesReserva(req.body);
+        } catch (errorCampo) {
+            const message = errorCampo?.code === CODIGO_PREVISION_INVALIDA ? 'prevision-invalida' : 'comentario-invalido';
+            return res.status(400).json({ message });
         }
 
         const ACCESS_TOKEN = accessToken;
@@ -169,7 +180,9 @@ export const createOrder = async (req, res) => {
                 estadoReserva,
                 preference_id,
                 estadoPeticion,
-                id_profesional
+                id_profesional,
+                camposOpcionales.prevision,
+                camposOpcionales.comentario
             );
 
             if (resultadoInsert && resultadoInsert.affectedRows > 0) {
