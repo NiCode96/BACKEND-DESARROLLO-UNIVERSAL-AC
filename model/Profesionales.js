@@ -11,6 +11,7 @@ export default class Profesionales {
     correoContacto,
     numeroTelefono,
     rutProfesional,
+    categoriaProfesional = null,
     ) {
         try {
             const conexion = DataBase.getInstance();
@@ -18,14 +19,16 @@ export default class Profesionales {
             INSERT INTO profesionales (        
             nombreProfesional,
             descripcionProfesional,
+            categoriaProfesional,
             correoContacto,
             numeroTelefono,
             rutProfesional) 
-            VALUES (?,?,?,?,?)`;
+            VALUES (?,?,?,?,?,?)`;
 
             const params = [
                 nombreProfesional,
                 descripcionProfesional,
+                categoriaProfesional,
                 correoContacto,
                 numeroTelefono,
                 rutProfesional
@@ -53,16 +56,21 @@ export default class Profesionales {
         correoContacto,
         numeroTelefono,
         rutProfesional,
-        id_profesional
+        id_profesional,
+        categoriaProfesional = undefined
     ) {
         try {
 
             const conexion = DataBase.getInstance();
 
+            // categoriaProfesional === undefined → no vino en la petición: se conserva lo guardado
+            const conCategoria = categoriaProfesional !== undefined;
+
             const query = `
             UPDATE profesionales SET        
             nombreProfesional = ?,
             descripcionProfesional = ?,
+            ${conCategoria ? "categoriaProfesional = ?," : ""}
             correoContacto = ?,
             numeroTelefono = ?,
             rutProfesional = ?
@@ -71,6 +79,7 @@ export default class Profesionales {
             const params = [
                 nombreProfesional,
                 descripcionProfesional,
+                ...(conCategoria ? [categoriaProfesional] : []),
                 correoContacto,
                 numeroTelefono,
                 rutProfesional,

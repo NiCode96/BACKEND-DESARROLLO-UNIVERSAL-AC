@@ -1,4 +1,10 @@
 import Profesionales from '../model/Profesionales.js';
+import { CODIGO_CATEGORIA_INVALIDA, SIN_CAMBIO, normalizarCategoriaProfesional } from '../services/categoriaProfesional.js';
+
+// Categoría: undefined = no vino (se conserva al editar); lanza CATEGORIA_INVALIDA si no sirve
+function leerCategoria(body) {
+    return normalizarCategoriaProfesional(body?.categoriaProfesional);
+}
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -28,11 +34,19 @@ export default class ProfesionalesController {
                 rutProfesional
             } = req.body;
 
-            console.log(`PROFESIONALES ENVIANDOS DESDE EL ENDPOINT:`);
-            console.log(req.body);
+            // Sin req.body: trae RUT, teléfono y correo (Ley 21.719). Solo qué operación y quién.
+            console.log(`[profesionales] ${req.path} · usuario=${req.sesionClerk?.sub ?? "sin-sesion"}`);
 
             if (!nombreProfesional || !descripcionProfesional || !correoContacto || !numeroTelefono || !rutProfesional ) {
                 return res.status(400).json({ message: "sindata" });
+            }
+
+            let categoriaProfesional;
+            try {
+                categoriaProfesional = leerCategoria(req.body);
+            } catch (error) {
+                if (error.code === CODIGO_CATEGORIA_INVALIDA) return res.status(400).json({ message: "categoria-invalida" });
+                throw error;
             }
 
             const profesionalClass = new Profesionales();
@@ -41,7 +55,8 @@ export default class ProfesionalesController {
                 descripcionProfesional,
                 correoContacto,
                 numeroTelefono,
-                rutProfesional
+                rutProfesional,
+                categoriaProfesional === SIN_CAMBIO ? null : categoriaProfesional
             );
             if (resultado.affectedRows > 0) {
                 res.status(200).json({ message: true });
@@ -65,8 +80,8 @@ export default class ProfesionalesController {
                 id_profesional
             } = req.body;
 
-            console.log(`PROFESIONALES ENVIANDOS DESDE EL ENDPOINT:`);
-            console.log(req.body);
+            // Sin req.body: trae RUT, teléfono y correo (Ley 21.719). Solo qué operación y quién.
+            console.log(`[profesionales] ${req.path} · usuario=${req.sesionClerk?.sub ?? "sin-sesion"}`);
 
             if (!nombreProfesional ||
                 !descripcionProfesional ||
@@ -77,6 +92,14 @@ export default class ProfesionalesController {
                 return res.status(400).json({ message: "sindata" });
             }
 
+            let categoriaProfesional;
+            try {
+                categoriaProfesional = leerCategoria(req.body);
+            } catch (error) {
+                if (error.code === CODIGO_CATEGORIA_INVALIDA) return res.status(400).json({ message: "categoria-invalida" });
+                throw error;
+            }
+
             const profesionalClass = new Profesionales();
             const resultado = await profesionalClass.actualizarProfesionalModel(
                 nombreProfesional,
@@ -84,7 +107,8 @@ export default class ProfesionalesController {
                 correoContacto,
                 numeroTelefono,
                 rutProfesional,
-                id_profesional
+                id_profesional,
+                categoriaProfesional === SIN_CAMBIO ? undefined : categoriaProfesional
             );
 
             if (resultado.affectedRows > 0) {

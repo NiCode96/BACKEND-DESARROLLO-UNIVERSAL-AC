@@ -2,6 +2,7 @@ import DatosEmpresaController from "../controller/DatosEmpresaController.js";
 
 import {Router} from "express";
 import { exigirSesionClerk } from "../middleware/exigirSesionClerk.js";
+import { exigirAdministradorClinica } from "../middleware/exigirAdministradorClinica.js";
 const router = Router();
 
 // PÚBLICA: la portada, reserva-hora y el Footer del sitio anónimo leen los
@@ -14,7 +15,8 @@ router.use(exigirSesionClerk);
 
 router.post("/seleccionarporid", DatosEmpresaController.seleccionarDatosEspecificos_porId);
 router.post("/actualizar", DatosEmpresaController.actualizarDatos);
-router.post("/actualizarLogo", DatosEmpresaController.actualizarLogo);
+// Solo quien administra la clínica (mismas reglas que el front: dashboard-access.js)
+router.post("/actualizarLogo", exigirAdministradorClinica, DatosEmpresaController.actualizarLogo);
 
 
 

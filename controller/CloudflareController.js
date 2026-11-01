@@ -38,7 +38,8 @@ export default class CloudflareController {
                 return res.status(400).json({message: "sinimagen"});
             }
 
-            console.log(req.file);
+            // Sin el buffer: solo lo necesario para diagnosticar
+            console.log(`[Cloudflare] subiendo ${req.file.mimetype} · ${req.file.size} bytes`);
 
             const variantName = req.body?.variantName || "public";
 
