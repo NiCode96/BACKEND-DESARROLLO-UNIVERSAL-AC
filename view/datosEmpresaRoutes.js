@@ -14,6 +14,7 @@ router.use(exigirSesionClerk);
 
 router.post("/seleccionarporid", DatosEmpresaController.seleccionarDatosEspecificos_porId);
 router.post("/actualizar", DatosEmpresaController.actualizarDatos);
+router.post("/actualizarLogo", DatosEmpresaController.actualizarLogo);
 
 
 

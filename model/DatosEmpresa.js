@@ -104,4 +104,15 @@ export default class DatosEmpresa {
             throw err;
         }
     }
+
+    //ACTUALIZAR SOLO EL LOGO (id de Cloudflare Images, o NULL para quitarlo)
+    async actualizarLogoEmpresa(logoEmpresa, id_empresa) {
+        try {
+            const conexion = DataBase.getInstance();
+            const query = `UPDATE datos_empresa SET logoEmpresa = ? WHERE id_empresa = ? AND estadoActivo <> 0`;
+            return await conexion.ejecutarQuery(query, [logoEmpresa, id_empresa]);
+        }catch(err) {
+            throw err;
+        }
+    }
 }
