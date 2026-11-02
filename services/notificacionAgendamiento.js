@@ -4,6 +4,7 @@ import ReservaPacientes from "../model/ReservaPacientes.js";
 import Profesionales from "../model/Profesionales.js";
 import { generarICSBase64 } from "./icsUtils.js";
 import { construirCorreoBase, construirTablaDetalle, construirBoton, TEXTO_PRINCIPAL, TEXTO_SECUNDARIO, formatearRutCorreo } from "./emailTemplateBase.js";
+import ConsentimientoAceptacion from "../model/ConsentimientoAceptacion.js";
 
 function formatearMontoCorreo(monto) {
     const numero = Number(monto ?? 0);
@@ -152,7 +153,8 @@ function construirHtmlCorreoPaciente({
     ctaTexto,
     urlConfirmar,
     urlCancelar,
-    fromName
+    fromName,
+    codigoPrivacidad = null
 }) {
     const tabla = construirTablaDetalle([
         { label: "Paciente", value: normalizarTextoCorreo(nombrePaciente) },
@@ -175,6 +177,13 @@ function construirHtmlCorreoPaciente({
         ${construirBoton({ href: urlConfirmar, texto: "Confirmar asistencia" })}
         ${construirBoton({ href: urlCancelar, texto: "Cancelar cita", color: TEXTO_SECUNDARIO })}
       </div>
+      ${codigoPrivacidad ? `
+      <p style="margin: 22px 0 0 0; font-size: 13px; line-height: 1.6; color: ${TEXTO_SECUNDARIO};">
+        Tu aceptación de la política de privacidad quedó registrada con el código
+        <strong style="color: ${TEXTO_PRINCIPAL}; letter-spacing: 0.04em;">${codigoPrivacidad}</strong>.
+        Te enviamos la constancia en un correo aparte.${process.env.URL_PUBLICA_SITIO ? `
+        <a href="${String(process.env.URL_PUBLICA_SITIO).replace(/\/$/, "")}/verificar/${codigoPrivacidad}" style="color: #007AFF; text-decoration: none;">Verificar</a>` : ""}
+      </p>` : ""}
     `;
 
     return construirCorreoBase({
@@ -331,7 +340,8 @@ export default class NotificacionAgendamiento {
             ctaTexto: "tu reserva fue modificada y ya se encuentra actualizada en nuestro sistema.",
             urlConfirmar,
             urlCancelar,
-            fromName
+            fromName,
+            codigoPrivacidad
         });
 
         const adjuntoICS = construirAdjuntoICS({
@@ -460,6 +470,17 @@ export default class NotificacionAgendamiento {
             `En caso de no poder asistir, te pedimos cancelarla con anticipación para poder reasignar ese horario a otro paciente.\n` +
             `Muchas gracias por tu colaboracion.\n\n` +
             `Saludos, ${empresa}.`;
+
+        // Código de la constancia de privacidad de esta reserva (si el paciente la aceptó en la
+        // página pública). Si la consulta falla, el correo sale igual, sin esa línea.
+        let codigoPrivacidad = null;
+        if (id_reserva) {
+            try {
+                codigoPrivacidad = await new ConsentimientoAceptacion().codigoPrivacidadPorReserva(id_reserva);
+            } catch (error) {
+                console.error("[MAIL] código de privacidad:", error.message);
+            }
+        }
 
         const html = construirHtmlCorreoPaciente({
             eyebrow: "Reserva Confirmada",

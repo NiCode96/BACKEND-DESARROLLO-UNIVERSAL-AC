@@ -32,6 +32,16 @@ export default class ConsentimientoAceptacion {
     //VINCULAR LAS ACEPTACIONES DE UN TOKEN CON LA RESERVA Y EL PACIENTE
     // El paciente se busca por su documento sin puntos ni guion (en pacienteDatos
     // el RUT puede estar guardado con o sin formato).
+    //CÓDIGO DE LA CONSTANCIA DE PRIVACIDAD DE UNA RESERVA (para mencionarlo en la confirmación)
+    async codigoPrivacidadPorReserva(id_reserva) {
+        const query = `
+            SELECT codigo_verificacion FROM consentimiento_aceptacion
+            WHERE id_reserva = ? AND plantilla_codigo = 'tratamiento_datos' AND revocado_at IS NULL
+            ORDER BY aceptado_at DESC LIMIT 1`;
+        const filas = await DataBase.getInstance().ejecutarQuery(query, [id_reserva]);
+        return filas?.[0]?.codigo_verificacion || null;
+    }
+
     async vincularReserva(token, id_reserva, documentoLimpio, vinculadoAt) {
         const query = `
             UPDATE consentimiento_aceptacion
