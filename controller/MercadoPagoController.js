@@ -6,6 +6,7 @@ import * as mpNamed from "mercadopago";
 import { notificacionAgendamiento, notificacionActualizacionAgendamiento } from "../services/notificacionWhatsApp.js";
 import MercadoPersistence from "../model/MercadoPersisntence.js"
 import Profesionales from "../model/Profesionales.js";
+import { vincularAceptacionConReserva } from "./ConsentimientosController.js";
 import { leerCamposOpcionalesReserva, CODIGO_PREVISION_INVALIDA } from "../services/camposReserva.js";
 
 dotenv.config();
@@ -65,15 +66,16 @@ export const createOrder = async (req, res) => {
             horaFinalizacion,
             estadoReserva ,
             totalPago,
-            id_profesional
+            id_profesional,
+            token_aceptacion
         } = req.body;
 
         const mercadoPagoPersistence = new MercadoPersistence();
         const tokenData = await mercadoPagoPersistence.seleccionarTOKEN();
         const accessToken = tokenData?.[0]?.access_token;
 
-        console.log("Iniciando Mercado pago: Body");
-        console.log(req.body);
+        // Sin req.body en el log: trae RUT, teléfono y correo del paciente (Ley 21.719)
+        console.log("[MercadoPago] create-order recibido");
 
         if (!nombrePaciente || !apellidoPaciente || !rut || !telefono || !email || !fechaInicio || !horaInicio || !fechaFinalizacion || !horaFinalizacion || !id_profesional) {
             return res.status(400).json({ message: 'sindata' });
@@ -186,6 +188,9 @@ export const createOrder = async (req, res) => {
             );
 
             if (resultadoInsert && resultadoInsert.affectedRows > 0) {
+                // Une la aceptación de la política de privacidad con la reserva pendiente de pago.
+                // Nunca lanza: si el token no existe o ya se usó, se registra y la reserva sigue.
+                await vincularAceptacionConReserva(token_aceptacion, resultadoInsert.insertId, rut);
 
                //PRIMERA ACCION ENVIAR AL CLIENTE EL ENLACE DE PAGO GENERADO DESDE MERCADO PAGO
                 console.log('Reserva insertada con estado "reservado" con estado 3 (VISIBLE TEMPORALMENTE), preference_id:', preference_id);

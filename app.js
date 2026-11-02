@@ -53,6 +53,10 @@ import envioCotizacionRoutes from "./view/envioCotizacionRoutes.js";
 import detalleCotizaciones from "./view/detalleCotizacionRoutes.js"
 import resenasRoutes from "./view/resenasRoutes.js";
 import healthMetricsRoutes from "./view/healthMetricsRoutes.js";
+// Consentimientos de la reserva pública (política de privacidad, Ley 21.719): docs/firma, Fase 2
+import consentimientosRoutes from "./view/consentimientosRoutes.js";
+// Verificación pública de constancias y documentos (destino del QR): docs/firma, Fase 3
+import verificacionRoutes from "./view/verificacionRoutes.js";
 import telemedicinaRoutes from "./view/telemedicinaRoutes.js";
 import { exigirSesionClerk } from "./middleware/exigirSesionClerk.js";
 
@@ -123,6 +127,11 @@ app.use("/telemedicina", telemedicinaRoutes);
 
 
 app.use("/health-metrics", healthMetricsRoutes);
+// Consentimientos: seleccionarVigentes y registrarAceptacion son públicas (con límite de tasa);
+// el resto exige sesión dentro del router.
+app.use("/consentimientos", consentimientosRoutes);
+// Pública con límite de tasa: solo informa existencia, clínica, fecha y estado (nunca el paciente)
+app.use("/verificacion", verificacionRoutes);
 
 
 app.get('/recordatorios/ejecutar', async (req, res) => {

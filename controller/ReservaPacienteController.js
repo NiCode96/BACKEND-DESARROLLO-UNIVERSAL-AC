@@ -1,3 +1,4 @@
+import { vincularAceptacionConReserva } from "./ConsentimientosController.js";
 import ReservaPacientes from "../model/ReservaPacientes.js";
 import Pacientes from "../model/Pacientes.js";
 import NotificacionAgendamiento from "../services/notificacionAgendamiento.js";
@@ -218,7 +219,7 @@ export default class ReservaPacienteController {
                 id_reserva
             } = req.body;
 
-            console.log(req.body);
+            // Sin req.body en el log: trae RUT, teléfono y correo (Ley 21.719)
 
             if (!id_reserva || !id_profesional) {
                 return res.status(404).send({message: 'sindata'})
@@ -401,11 +402,11 @@ export default class ReservaPacienteController {
                 motivo_reserva,
                 estadoReserva,
                 id_profesional,
-                origen
+                origen,
+                token_aceptacion
 
             } = req.body;
 
-            console.log(req.body);
             const correoNormalizado = email && String(email).trim() ? String(email).trim() : null;
 
             if (!nombrePaciente || !apellidoPaciente || !rut || !telefono || !fechaInicio || !horaInicio || !fechaFinalizacion || !horaFinalizacion || !monto_reserva || !motivo_reserva || !estadoReserva || !id_profesional) {
@@ -434,6 +435,10 @@ export default class ReservaPacienteController {
                 comentario)
 
             if (resultadoQuery.affectedRows > 0) {
+                // Une la aceptación de la política de privacidad (registrada antes por la página
+                // pública) con esta reserva y el paciente. Nunca lanza: la reserva no se pierde.
+                await vincularAceptacionConReserva(token_aceptacion, resultadoQuery.insertId, rut);
+
                 if (correoNormalizado) {
                     try {
                         // Se reenvian monto y motivo al servicio de correo
@@ -535,7 +540,7 @@ export default class ReservaPacienteController {
                 id_profesional
             } = req.body;
 
-            console.log(req.body);
+            // Sin req.body en el log: trae RUT, teléfono y correo (Ley 21.719)
             const correoNormalizado = email && String(email).trim() ? String(email).trim() : null;
 
             if (!nombrePaciente || !apellidoPaciente || !rut || !telefono || !fechaInicio || !horaInicio || !fechaFinalizacion || !horaFinalizacion || !estadoReserva || !id_profesional) {
@@ -696,7 +701,7 @@ export default class ReservaPacienteController {
             console.log("-------------------------------------------------------------------")
             console.log("SE PROCEDE CON EL CONTROLLADOR DE UNA RESERVA INDIVIDUAL ===> FUNCIONALIDAD INSERTAR-RESERVA-MULTIPLE")
             console.log("-------------------------------------------------------------------")
-            console.log(req.body);
+            // Sin req.body en el log: trae RUT, teléfono y correo (Ley 21.719)
             console.log("-------------------------------------------------------------------")
             console.log(" ")
 
