@@ -1,5 +1,17 @@
 import DataBase from "../config/Database.js";
 
+// FIRMA: columnas que se pueden devolver al front. NUNCA "SELECT *": la tabla guarda
+// la ubicación del certificado SIS en R2 (registro_sis_certificado_key) y quién lo
+// verificó, que no deben salir en una respuesta (los listados son públicos).
+// firma_estado: "activa" | "ninguna", calculado sin exponer datos de la firma.
+const COLUMNAS_PUBLICAS = `
+    p.id_profesional, p.nombreProfesional, p.descripcionProfesional, p.categoriaProfesional,
+    p.imagenProfesional, p.estado_Profesional, p.correo_profesional, p.correoContacto,
+    p.numeroTelefono, p.rutProfesional, p.usuarioAsignadoClerk,
+    p.registro_sis_numero, p.registro_sis_estado,
+    IF(EXISTS (SELECT 1 FROM profesional_firma f WHERE f.id_profesional = p.id_profesional AND f.estado = 'activa'),
+       'activa', 'ninguna') AS firma_estado`;
+
 export default class Profesionales {
 
     constructor() {
@@ -12,6 +24,7 @@ export default class Profesionales {
     numeroTelefono,
     rutProfesional,
     categoriaProfesional = null,
+    imagenProfesional = null,
     ) {
         try {
             const conexion = DataBase.getInstance();
@@ -22,8 +35,9 @@ export default class Profesionales {
             categoriaProfesional,
             correoContacto,
             numeroTelefono,
-            rutProfesional) 
-            VALUES (?,?,?,?,?,?)`;
+            rutProfesional,
+            imagenProfesional)
+            VALUES (?,?,?,?,?,?,?)`;
 
             const params = [
                 nombreProfesional,
@@ -31,7 +45,8 @@ export default class Profesionales {
                 categoriaProfesional,
                 correoContacto,
                 numeroTelefono,
-                rutProfesional
+                rutProfesional,
+                imagenProfesional
             ];
 
             const resultado = await conexion.ejecutarQuery(query, params);
@@ -57,7 +72,8 @@ export default class Profesionales {
         numeroTelefono,
         rutProfesional,
         id_profesional,
-        categoriaProfesional = undefined
+        categoriaProfesional = undefined,
+        imagenProfesional = undefined
     ) {
         try {
 
@@ -65,6 +81,8 @@ export default class Profesionales {
 
             // categoriaProfesional === undefined → no vino en la petición: se conserva lo guardado
             const conCategoria = categoriaProfesional !== undefined;
+            // FIRMA: imagenProfesional === undefined → no vino: se conserva la foto guardada
+            const conImagen = imagenProfesional !== undefined;
 
             const query = `
             UPDATE profesionales SET        
@@ -73,7 +91,7 @@ export default class Profesionales {
             ${conCategoria ? "categoriaProfesional = ?," : ""}
             correoContacto = ?,
             numeroTelefono = ?,
-            rutProfesional = ?
+            rutProfesional = ?${conImagen ? ",\n            imagenProfesional = ?" : ""}
             WHERE id_profesional = ?`;
 
             const params = [
@@ -83,6 +101,7 @@ export default class Profesionales {
                 correoContacto,
                 numeroTelefono,
                 rutProfesional,
+                ...(conImagen ? [imagenProfesional] : []),
                 id_profesional
             ];
 
@@ -124,7 +143,7 @@ export default class Profesionales {
     async seleccionarProfesionalPorID(id_profesional) {
         try {
             const conexion = DataBase.getInstance();
-            const query = "SELECT * FROM profesionales WHERE id_profesional = ? AND estado_Profesional <> 0";
+            const query = `SELECT ${COLUMNAS_PUBLICAS} FROM profesionales p WHERE p.id_profesional = ? AND p.estado_Profesional <> 0`;
             const params = [id_profesional];
             const resultado = await conexion.ejecutarQuery(query, params);
             if (resultado) {
@@ -161,7 +180,7 @@ export default class Profesionales {
     async seleccionarProfesionales() {
         try {
             const conexion = DataBase.getInstance();
-            const query = "SELECT * FROM profesionales WHERE estado_Profesional <> 0";
+            const query = `SELECT ${COLUMNAS_PUBLICAS} FROM profesionales p WHERE p.estado_Profesional <> 0`;
             const resultado = await conexion.ejecutarQuery(query);
             if(resultado) {
                 return resultado;
