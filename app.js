@@ -57,6 +57,8 @@ import healthMetricsRoutes from "./view/healthMetricsRoutes.js";
 import consentimientosRoutes from "./view/consentimientosRoutes.js";
 // Verificación pública de constancias y documentos (destino del QR): docs/firma, Fase 3
 import verificacionRoutes from "./view/verificacionRoutes.js";
+// Procedimientos del consentimiento informado (anexos creados por la clínica): docs/firma, Fase 2b
+import procedimientosRoutes from "./view/procedimientosRoutes.js";
 import telemedicinaRoutes from "./view/telemedicinaRoutes.js";
 import { exigirSesionClerk } from "./middleware/exigirSesionClerk.js";
 
@@ -132,6 +134,8 @@ app.use("/health-metrics", healthMetricsRoutes);
 app.use("/consentimientos", consentimientosRoutes);
 // Pública con límite de tasa: solo informa existencia, clínica, fecha y estado (nunca el paciente)
 app.use("/verificacion", verificacionRoutes);
+// Sesión obligatoria dentro del router; crear, versionar y retirar solo administradores
+app.use("/procedimientos", procedimientosRoutes);
 
 
 app.get('/recordatorios/ejecutar', async (req, res) => {
