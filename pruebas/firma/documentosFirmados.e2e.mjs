@@ -312,18 +312,33 @@ test("listados: por paciente (rol clínico) y pendientes de la firmante", async 
     assert.deepEqual((await post("/documentos/listarPendientesFirma", {}, "admin")).cuerpo.documentos, []);
 });
 
-test("bandeja: lo que otro prepara para la firmante aparece en sus 'documentos', en los 'enviados' de quien lo preparó y en 'clinica' para administración", async () => {
-    const doc = (await preparar({ usuario: "otro", tipo: "ficha_clinica" })).cuerpo.documento;
+test("reserva de la ficha (Ley 20.584): otro profesional no prepara, ve, descarga, envía ni lista documentos ajenos", async () => {
+    // Un profesional no puede preparar un documento que firma otro.
+    assert.deepEqual((await preparar({ usuario: "otro", tipo: "ficha_clinica" })).cuerpo, { message: "sinPermiso" });
+    // La administración sí (secretaría del centro), y queda en la bandeja de la firmante.
+    const doc = (await preparar({ usuario: "admin", tipo: "ficha_clinica" })).cuerpo.documento;
     const deDuenia = (await post("/documentos/listarPendientesFirma", {}, "duenio")).cuerpo;
     assert.ok(deDuenia.documentos.some((d) => d.id_documento === doc.id_documento), "la firmante lo ve para firmar");
-    assert.ok(!deDuenia.enviados.some((d) => d.id_documento === doc.id_documento));
-    assert.deepEqual(deDuenia.clinica, [], "una profesional no ve lo de toda la clínica");
-    const deOtro = (await post("/documentos/listarPendientesFirma", {}, "otro")).cuerpo;
-    assert.ok(deOtro.enviados.some((d) => d.id_documento === doc.id_documento && d.firmante_nombre), "quien lo preparó lo ve esperando, con el nombre de la firmante");
-    assert.ok(!deOtro.documentos.some((d) => d.id_documento === doc.id_documento), "pero no puede firmarlo");
+    assert.deepEqual([deDuenia.enviados, deDuenia.clinica], [[], []], "una profesional no ve lo de otros");
     const deAdmin = (await post("/documentos/listarPendientesFirma", {}, "admin")).cuerpo;
-    assert.ok(deAdmin.clinica.some((d) => d.id_documento === doc.id_documento), "administración ve todo lo pendiente");
-    assert.deepEqual((await post("/documentos/firmarDocumento", { id_documento: doc.id_documento }, "otro")).cuerpo, { message: "sinPermiso" });
+    assert.ok(deAdmin.enviados.some((d) => d.id_documento === doc.id_documento), "administración sigue lo que envió");
+
+    const deOtro = (await post("/documentos/listarPendientesFirma", {}, "otro")).cuerpo;
+    assert.ok(![...deOtro.documentos, ...deOtro.enviados, ...deOtro.clinica].some((d) => d.id_documento === doc.id_documento));
+    for (const [ruta, cuerpo] of [
+        ["seleccionarBorrador", { id_documento: doc.id_documento }],
+        ["descargarDocumento", { id_documento: cotizacion.id_documento }],
+        ["enviarDocumentoCorreo", { id_documento: cotizacion.id_documento }],
+        ["firmarDocumento", { id_documento: doc.id_documento }],
+    ]) assert.equal((await post(`/documentos/${ruta}`, cuerpo, "otro")).status, 403, ruta);
+    const consentimiento = (await preparar({ tipo: "consentimiento_informado" })).cuerpo.documento;
+    assert.equal((await post("/documentos/solicitarOtpPaciente", { id_documento: consentimiento.id_documento, canal: "email" }, "otro")).status, 403);
+    assert.equal((await post("/documentos/verificarOtpPaciente", { id_documento: consentimiento.id_documento, codigo: "123456" }, "otro")).status, 403);
+    const listaOtro = (await post("/documentos/listarDocumentosPaciente", { id_paciente: ID_PACIENTE }, "otro")).cuerpo.documentos;
+    assert.deepEqual(listaOtro, [], "en la carpeta del paciente no ve documentos que firma otro");
+    // La administración y la firmante sí.
+    assert.equal((await post("/documentos/descargarDocumento", { id_documento: cotizacion.id_documento }, "admin")).status, 200);
+    assert.equal((await post("/documentos/seleccionarBorrador", { id_documento: doc.id_documento }, "duenio")).status, 200);
 });
 
 test("anular: pide reverificación y motivo; un anulado no se firma y queda en la evidencia", async () => {

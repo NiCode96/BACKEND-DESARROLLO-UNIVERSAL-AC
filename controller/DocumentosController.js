@@ -64,9 +64,11 @@ async function datosEmpresa() {
     return (await new DatosEmpresa().seleccionarDatosEmpresa())?.[0] || {};
 }
 
+/* Acceso a un documento (Ley 20.584, reserva de la ficha clínica): solo el profesional
+ * que lo firma y la administración del centro. Otro profesional no ve, descarga, envía
+ * ni maneja documentos ajenos, aunque los haya preparado. */
 function puedeVer(usuario, documento) {
-    return esRolClinico(usuario) || esProfesionalDueno(usuario, documento.id_profesional_firmante)
-        || documento.preparado_por_clerk_id === usuario.clerkId;
+    return esAdministrador(usuario) || esProfesionalDueno(usuario, documento.id_profesional_firmante);
 }
 
 export default class DocumentosController {
@@ -82,6 +84,7 @@ export default class DocumentosController {
             const idFirmante = Number(b.id_profesional_firmante);
             const idPaciente = b.id_paciente ? Number(b.id_paciente) : null;
             if (!req.file || !titulo || !idFirmante) return res.status(400).json({ message: "sindata" });
+            if (!esAdministrador(req.usuario) && !esProfesionalDueno(req.usuario, idFirmante)) return res.status(403).json({ message: "sinPermiso" });
             if (!TIPOS.has(tipo)) return res.status(422).json({ message: "tipoDocumentoNoPermitido" });
             if (titulo.length > 255) return res.status(422).json({ message: "datoinvalido" });
             if (req.file.buffer.subarray(0, 5).toString("latin1") !== "%PDF-") return res.status(422).json({ message: "pdfInvalido" });
@@ -163,9 +166,7 @@ export default class DocumentosController {
         try {
             const documento = await new DocumentoEmitido().seleccionarPorId(req.body?.id_documento);
             if (!documento) return res.status(404).json({ message: "noEncontrado" });
-            const permitido = esAdministrador(req.usuario) || esProfesionalDueno(req.usuario, documento.id_profesional_firmante)
-                || documento.preparado_por_clerk_id === req.usuario.clerkId;
-            if (!permitido) return res.status(403).json({ message: "sinPermiso" });
+            if (!puedeVer(req.usuario, documento)) return res.status(403).json({ message: "sinPermiso" });
 
             await registrarAcceso({ id_documento: documento.id_documento, accion: "visto", usuario: req.usuario, contexto: req.contexto });
             const nombre = `${documento.tipo_documento}-${documento.codigo_verificacion}-borrador.pdf`;
@@ -352,7 +353,9 @@ export default class DocumentosController {
             const id_paciente = Number(req.body?.id_paciente);
             if (!id_paciente) return res.status(400).json({ message: "sindata" });
             const filas = await new DocumentoEmitido().listarPorPaciente(id_paciente);
-            return res.status(200).json({ message: true, documentos: filas.map(aObjetoDocumento) });
+            // La administración ve todos; un profesional, solo los que firma él.
+            const visibles = esAdministrador(req.usuario) ? filas : filas.filter((f) => esProfesionalDueno(req.usuario, f.id_profesional_firmante));
+            return res.status(200).json({ message: true, documentos: visibles.map(aObjetoDocumento) });
         } catch (error) {
             return respuestaError(res, error, "listarDocumentosPaciente");
         }
@@ -360,7 +363,7 @@ export default class DocumentosController {
 
     // POST /documentos/listarPendientesFirma
     //   documentos: los que esperan la firma del usuario (solo él puede firmarlos)
-    //   enviados:   los que preparó el usuario y esperan la firma de otro profesional
+    //   enviados:   (administración) los que preparó y esperan la firma de otro profesional
     //   clinica:    (administración) el resto de lo pendiente del centro
     static async listarPendientesFirma(req, res) {
         try {
@@ -368,7 +371,8 @@ export default class DocumentosController {
             const { idProfesional, clerkId } = req.usuario;
             const [propios, enviados, clinica] = await Promise.all([
                 idProfesional ? modelo.listarPendientesPorFirmante(idProfesional) : [],
-                modelo.listarEnviadosPendientes(clerkId, idProfesional),
+                // Lo preparado para otro profesional solo lo sigue la administración.
+                esAdministrador(req.usuario) ? modelo.listarEnviadosPendientes(clerkId, idProfesional) : [],
                 esAdministrador(req.usuario) ? modelo.listarPendientesClinica(clerkId, idProfesional) : [],
             ]);
             return res.status(200).json({
@@ -428,6 +432,7 @@ export default class DocumentosController {
 
             const documento = await new DocumentoEmitido().seleccionarPorId(id_documento);
             if (!documento) return res.status(404).json({ message: "noEncontrado" });
+            if (!puedeVer(req.usuario, documento)) return res.status(403).json({ message: "sinPermiso" });
             if (documento.estado !== "pendiente_firma") return res.status(409).json({ message: "documentoYaFirmado" });
             if (!documento.zona_paciente || !documento.id_paciente) return res.status(422).json({ message: "tipoDocumentoNoPermitido" });
 
@@ -483,6 +488,7 @@ export default class DocumentosController {
 
             await conexion.beginTransaction();
             const documento = await new DocumentoEmitido().seleccionarPorId(id_documento, conexion);
+            if (documento && !puedeVer(req.usuario, documento)) { await conexion.rollback(); return res.status(403).json({ message: "sinPermiso" }); }
             if (!documento || documento.estado !== "pendiente_firma") { await conexion.rollback(); return res.status(409).json({ message: "otpExpirado" }); }
             const modelo = new PacienteOtp();
             const otp = await modelo.ultimo(conexion, id_documento);
