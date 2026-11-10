@@ -377,7 +377,21 @@ export default class DocumentosController {
                 esAdministrador(req.usuario) ? modelo.listarPendientesClinica(clerkId, idProfesional) : [],
             ]);
             // vence_at: cuándo se anula solo si nadie lo firma (services/firma/vencimientoDocumentos.js).
-            const conVencimiento = (fila) => ({ ...aObjetoDocumento(fila), vence_at: venceEl(aObjetoDocumento(fila)) });
+            // Un consentimiento que espera el código del paciente se puede terminar desde la
+            // bandeja: va el contacto de la ficha ENMASCARADO (para elegir canal); el código
+            // siempre se envía al dato registrado, nunca a uno que mande el navegador.
+            const conVencimiento = (fila) => {
+                const documento = aObjetoDocumento(fila);
+                const esperaCodigo = documento.requiere_aceptacion_paciente && !documento.paciente_acepto_at;
+                return {
+                    ...documento,
+                    vence_at: venceEl(documento),
+                    ...(esperaCodigo ? { contacto_paciente: {
+                        telefono: telefonoE164(fila.paciente_telefono_ficha) ? enmascararTelefono(fila.paciente_telefono_ficha) : null,
+                        correo: CORREO_VALIDO.test(String(fila.paciente_correo_ficha ?? "")) ? enmascararCorreo(fila.paciente_correo_ficha) : null,
+                    } } : {}),
+                };
+            };
             return res.status(200).json({
                 message: true,
                 documentos: propios.map(conVencimiento),

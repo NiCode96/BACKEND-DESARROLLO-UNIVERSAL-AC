@@ -147,6 +147,24 @@ test("la bandeja dice cuándo vence cada documento", async () => {
     assert.ok(!lista.some((d) => d.id_documento === docs.viejo.id_documento), "lo vencido ya no está");
 });
 
+test("consentimiento que espera el código: la bandeja trae el contacto del paciente enmascarado, nunca completo", async () => {
+    const consentimiento = await preparar("consentimiento_informado");
+    const respuesta = await post("/documentos/listarPendientesFirma", {}, "duenio");
+    const enLista = respuesta.cuerpo.documentos.find((d) => d.id_documento === consentimiento.id_documento);
+    assert.ok(enLista.contacto_paciente, "trae con qué canal se puede enviar el código");
+    const [pa] = await db.ejecutarQuery("SELECT telefono, correo FROM pacienteDatos WHERE id_paciente = 2283");
+    const crudo = JSON.stringify(respuesta.cuerpo);
+    for (const dato of [pa.telefono, pa.correo].filter((d) => String(d ?? "").length > 4)) {
+        assert.ok(!crudo.includes(String(dato)), `no expone ${dato.slice(0, 3)}…`);
+    }
+    if (enLista.contacto_paciente.telefono) assert.match(enLista.contacto_paciente.telefono, /•/);
+    if (enLista.contacto_paciente.correo) assert.match(enLista.contacto_paciente.correo, /•/);
+    assert.ok(!("paciente_telefono_ficha" in enLista) && !("paciente_correo_ficha" in enLista));
+    const reciente = respuesta.cuerpo.documentos.find((d) => d.id_documento === docs.reciente.id_documento);
+    assert.equal(reciente.contacto_paciente, undefined, "una cotización no lo necesita");
+    docs.consentimientoNuevo = consentimiento;
+});
+
 test("Quitar: otro profesional no; la firmante sí (sin reverificación), queda en la evidencia y se borra el borrador", async () => {
     assert.equal((await post("/documentos/quitarPendiente", { id_documento: docs.reciente.id_documento }, "otro")).status, 403);
     const clave = (await fila(docs.reciente.id_documento)).borrador_key;

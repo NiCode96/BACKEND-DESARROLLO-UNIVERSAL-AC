@@ -17,6 +17,7 @@ const SELECT_DOCUMENTO = `
            BIN_TO_UUID(d.id_firma) AS id_firma, ${sqlIso("d.firmado_at", "firmado_at")},
            d.pdf_key, d.pdf_sha256, d.pdf_bytes, ${sqlIso("d.anulado_at", "anulado_at")}, d.motivo_anulacion,
            TRIM(CONCAT(COALESCE(pa.nombre, ''), ' ', COALESCE(pa.apellido, ''))) AS paciente_nombre,
+           pa.telefono AS paciente_telefono_ficha, pa.correo AS paciente_correo_ficha,
            pr.nombreProfesional AS firmante_nombre
     FROM documento_emitido d
     LEFT JOIN pacienteDatos pa ON pa.id_paciente = d.id_paciente
@@ -45,6 +46,7 @@ export function aObjetoDocumento(fila) {
         anulado_at: isoDesdeMysql(fila.anulado_at),
         requiere_aceptacion_paciente: Boolean(fila.zona_paciente_json),
         paciente_acepto_at: isoDesdeMysql(fila.paciente_acepto_at),
+        paciente_canal: fila.paciente_canal || null,
     };
 }
 
