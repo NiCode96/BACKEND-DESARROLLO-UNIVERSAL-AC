@@ -17,7 +17,8 @@ import { inflateSync } from "node:zlib";
 import { after, before, mock, test } from "node:test";
 import express from "express";
 import sharp from "sharp";
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import { PDFDocument, PDFName, PDFRawStream, StandardFonts } from "pdf-lib";
+import jsQR from "jsqr";
 
 if (!process.env.DB_DATABASE || /produccion/i.test(process.env.DB_DATABASE)) {
     console.error("Configura DB_* con una base de PRUEBA."); process.exit(1);
@@ -100,6 +101,29 @@ function textoDelPdf(buffer) {
         for (const p of contenido.matchAll(/\(((?:\\.|[^\\)])*)\)\s*Tj/g)) texto += p[1] + "\n";
     }
     return texto;
+}
+
+/** Lee el QR real del PDF: busca las imágenes, las decodifica y devuelve el texto de cada QR. */
+async function qrsDelPdf(buffer) {
+    const pdf = await PDFDocument.load(buffer);
+    const textos = [];
+    for (const [, obj] of pdf.context.enumerateIndirectObjects()) {
+        if (!(obj instanceof PDFRawStream) || obj.dict.get(PDFName.of("Subtype"))?.toString() !== "/Image") continue;
+        const ancho = obj.dict.get(PDFName.of("Width")).asNumber(), alto = obj.dict.get(PDFName.of("Height")).asNumber();
+        const filtro = obj.dict.get(PDFName.of("Filter"))?.toString();
+        let datos = Buffer.from(obj.contents);
+        if (filtro === "/FlateDecode") { try { datos = inflateSync(datos); } catch { continue; } } else if (filtro) continue;
+        const canales = datos.length / (ancho * alto);
+        if (![1, 3, 4].includes(canales)) continue;
+        const rgba = new Uint8ClampedArray(ancho * alto * 4);
+        for (let i = 0; i < ancho * alto; i++) {
+            const r = datos[i * canales];
+            rgba.set([r, canales >= 3 ? datos[i * canales + 1] : r, canales >= 3 ? datos[i * canales + 2] : r, 255], i * 4);
+        }
+        const qr = jsQR(rgba, ancho, alto);
+        if (qr) textos.push(qr.data);
+    }
+    return textos;
 }
 
 const post = async (ruta, cuerpo, usuario, fva) => {
@@ -350,11 +374,18 @@ test("anular: pide reverificación y motivo; un anulado no se firma y queda en l
     assert.equal((await evento("documento_anulado", doc.id_documento)).length, 1);
 });
 
-test("los cinco tipos de la plataforma se preparan y firman (menos recetas)", async () => {
+test("los cinco tipos se firman y cada PDF lleva UN QR que apunta a su página de verificación", async () => {
+    const firmados = [cotizacion, consentimiento];
     for (const tipo of ["presupuesto", "orden_examen", "ficha_clinica"]) {
         const doc = (await preparar({ tipo })).cuerpo.documento;
         const r = await post("/documentos/firmarDocumento", { id_documento: doc.id_documento }, "duenio");
         assert.equal(r.status, 200, `${tipo}: ${JSON.stringify(r.cuerpo)}`);
+        firmados.push(r.cuerpo.documento);
+    }
+    for (const doc of firmados) {
+        const f = await fila(doc.id_documento);
+        const qrs = await qrsDelPdf(r2.get(f.pdf_key));
+        assert.deepEqual(qrs, [`https://desarrollo.agendaclinicas.cl/verificar/${doc.codigo_verificacion}`], `${doc.tipo_documento}: QR leído del PDF`);
     }
 });
 
