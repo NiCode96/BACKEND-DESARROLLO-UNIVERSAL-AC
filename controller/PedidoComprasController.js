@@ -49,7 +49,6 @@ export default class PedidoComprasController {
 
             console.log("BODY PARA INGRESO DE PEDIDOS COMPRAS: ");
             console.log("---------------------------------------");
-            console.log(req.body);
             console.log("---------------------------------------");
 
             if (!fecha_pedido || !nombre_comprador || !apellidosComprador || !telefono_comprador || !email_Comprador || !identificacion_comprador || !direccion_despacho || !comuna  || !regionPais || !preference_id) {
@@ -179,7 +178,6 @@ export default class PedidoComprasController {
     static async cambioEstadoDinamico(req, res) {
         try {
             const {estado_pedido, id_pedido} = req.body;
-            console.log(req.body);
 
             if (!estado_pedido || !id_pedido) {
                 return res.status(400).send({message:"sidato"});

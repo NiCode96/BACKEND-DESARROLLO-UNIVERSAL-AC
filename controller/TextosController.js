@@ -33,7 +33,6 @@ export default class TextosController {
         res.status(500).json({error : 'error al cargar datos desde controller'})
     }
     static async cambiarTexto1(req, res){
-        console.log(req.body);
         const {texto1} = req.body;
         if (!texto1) {
             return res.status(400).json({message : 'Error al consultar base de datos desde la clase controller'})
@@ -52,7 +51,6 @@ export default class TextosController {
 
 
     static async cambiarTexto2(req, res){
-        console.log(req.body);
         const {texto2} = req.body;
 
         if (!texto2) {

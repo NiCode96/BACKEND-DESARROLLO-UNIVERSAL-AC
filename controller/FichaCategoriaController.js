@@ -7,7 +7,6 @@ export default class FichaCategoriaController{
     static async listarPorPlantilla(req, res) {
         try{
             const {id_plantilla} = req.body;
-            console.log(req.body);
 
             if(!id_plantilla){
                 return res.status(400).send({
@@ -40,7 +39,6 @@ export default class FichaCategoriaController{
     static async obtenerPorId(req, res) {
         try{
             const {id_categoria} = req.body;
-            console.log(req.body);
 
             if(!id_categoria){
                 return res.status(400).send({
@@ -70,7 +68,6 @@ export default class FichaCategoriaController{
     static async insertarCategoria(req, res) {
         try{
             const {id_plantilla, nombre, orden} = req.body;
-            console.log(req.body);
 
             if(!id_plantilla || !nombre || !orden){
                 return res.status(400).send({
@@ -101,7 +98,6 @@ export default class FichaCategoriaController{
     static async actualizarCategoria(req, res) {
         try{
             const {nombre, orden, id_categoria} = req.body;
-            console.log(req.body);
 
             if(!id_categoria || !nombre || !orden){
                 return res.status(400).send({
@@ -132,7 +128,6 @@ export default class FichaCategoriaController{
     static async eliminarCategoria(req, res) {
         try{
             const {id_categoria} = req.body;
-            console.log(req.body);
 
             if(!id_categoria){
                 return res.status(400).send({

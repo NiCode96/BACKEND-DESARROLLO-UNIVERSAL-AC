@@ -24,7 +24,6 @@ export default class PacienteController {
 
     static async seleccionarPacienteEspecifico(req, res){
         try {
-            console.log(req.body)
             const {id_paciente} = req.body;
 
             if (!id_paciente) {
@@ -52,7 +51,6 @@ export default class PacienteController {
 
     static async buscarPaciente_RutExacto(req, res){
         try {
-            console.log(req.body)
             const {rut} = req.body;
 
             if (!rut) {
@@ -77,7 +75,6 @@ export default class PacienteController {
 
     static async seleccionarCoincidenciaRUT(req, res){
         try {
-            console.log(req.body)
             const {rut} = req.body;
             if (!rut) {
                 return res.status(400).json({message : 'sindato'})
@@ -103,7 +100,6 @@ export default class PacienteController {
 
     static async seleccionarCoincidenciaNombre(req, res){
         try {
-            console.log(req.body)
             const {nombre} = req.body;
             if (!nombre) {
                 return res.status(400).json({message : 'sindato'})
@@ -149,7 +145,6 @@ export default class PacienteController {
                 habitos,
                 comentariosAdicionales
             } = req.body;
-            console.log(req.body)
 
             if (!nombre || !apellido || !rut || !nacimiento || !sexo || !prevision_id || !telefono || !direccion || !pais) {
                 return res.status(400).json({message : 'Faltan datos obligatorios en el body'})
@@ -197,7 +192,6 @@ export default class PacienteController {
                 comentariosAdicionales,
                 id_paciente
             } = req.body;
-            console.log(req.body)
             if (!nombre || !apellido || !rut || !nacimiento || !sexo || !prevision_id || !telefono || !direccion || !pais || !id_paciente) {
                 return res.status(400).json({message : 'sindato'})
             }
@@ -222,7 +216,6 @@ export default class PacienteController {
 
     static async eliminarPaciente(req, res){
         try {
-            console.log(req.body)
             const {id_paciente} = req.body;
 
             if (!id_paciente) {

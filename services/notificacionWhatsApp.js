@@ -199,7 +199,6 @@ export async function notificacionAgendamiento({ telefono, nombre, apellido, nom
         const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
         console.log("[WSP] buttonMode:", buttonMode);
-        console.log("[WSP] variables:", contentVariables);
 
         await client.messages.create({
             from: `whatsapp:${fromNumber}`,

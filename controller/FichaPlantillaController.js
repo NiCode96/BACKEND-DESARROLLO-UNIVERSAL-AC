@@ -24,7 +24,6 @@ static async listarPlantillas(req, res){
     static async obtenerPorId(req, res){
         try{
             const {id_plantilla} = req.body;
-            console.log(req.body);
 
             if(!id_plantilla){
                 return res.status(400).json({
@@ -50,7 +49,6 @@ static async listarPlantillas(req, res){
     static async insertarPlantilla(req, res){
         try{
             const {nombre, descripcion} = req.body;
-            console.log(req.body);
 
             if(!nombre || !descripcion){
                 return res.status(400).json({
@@ -76,7 +74,6 @@ static async listarPlantillas(req, res){
     static async actualizarPlantilla(req, res){
         try{
             const {nombre, descripcion, id_plantilla} = req.body;
-            console.log(req.body);
 
             if(!nombre || !descripcion || !id_plantilla){
                 return res.status(400).json({
@@ -102,7 +99,6 @@ static async listarPlantillas(req, res){
     static async eliminarPlantilla(req, res){
         try{
             const {id_plantilla} = req.body;
-            console.log(req.body);
 
             if(!id_plantilla){
                 return res.status(400).json({
@@ -127,7 +123,6 @@ static async listarPlantillas(req, res){
     static async obtenerPlantillaCompleta(req, res){
         try{
             const {id_plantilla} = req.body;
-            console.log(req.body);
 
 
             if(!id_plantilla){

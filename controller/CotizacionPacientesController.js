@@ -59,7 +59,6 @@ export default class CotizacionPacientesController {
                 id_paciente,
             } = req.body;
 
-            console.log(req.body);
 
             if (!nombre_cotizacion || !profesional_solicitante_nombre || !id_paciente) {
                 return res.status(400).send({
@@ -260,7 +259,6 @@ export default class CotizacionPacientesController {
 
 
             console.log(`SIMILITUD PROFESIONAL BUSCADO:`)
-            console.log(req.body);
 
             if(!id_paciente || !profesional_solicitante_nombre) {
                 return res.status(400).send({

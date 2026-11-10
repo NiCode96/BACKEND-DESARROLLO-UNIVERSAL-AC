@@ -7,7 +7,6 @@ export default class FichaCampoController{
     static async listarPorCategoria(req, res){
         try {
             const {id_categoria} = req.body;
-            console.log(req.body);
 
             if(!id_categoria){
                 res.status(400).send({
@@ -36,7 +35,6 @@ export default class FichaCampoController{
     static async obtenerPorId(req, res){
         try {
             const {id_campo} = req.body;
-            console.log(req.body);
 
             if(!id_campo){
                 res.status(400).send({
@@ -63,7 +61,6 @@ export default class FichaCampoController{
     static async insertarCampo(req, res){
         try {
             const {id_categoria, nombre, requerido, orden} = req.body;
-            console.log(req.body);
 
             if(!id_categoria || !nombre || !requerido || !orden){
                 res.status(400).send({
@@ -97,7 +94,6 @@ export default class FichaCampoController{
     static async actualizarCampo(req, res){
         try {
             const {nombre, requerido, orden, id_campo} = req.body;
-            console.log(req.body);
 
             if(!nombre || !requerido || !orden || !id_campo){
               return  res.status(400).send({
@@ -132,7 +128,6 @@ export default class FichaCampoController{
     static async eliminarCampo(req, res){
         try {
             const {id_campo} = req.body;
-            console.log(req.body);
 
             if(!id_campo){
                 res.status(400).send({

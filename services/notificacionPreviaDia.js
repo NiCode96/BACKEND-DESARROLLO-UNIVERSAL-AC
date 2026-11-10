@@ -327,18 +327,16 @@ export async function ejecutarRecordatoriosAutomaticos() {
 }
 
 async function ejecutarRecordatoriosAutomaticosInterno() {
-    console.log("[RECORDATORIO] ========================================");
-    console.log("[RECORDATORIO] Iniciando proceso de recordatorios...");
-    console.log("[RECORDATORIO] Fecha/Hora actual:", new Date().toLocaleString('es-CL'));
-
     try {
         const reservas = await obtenerReservasParaRecordatorio();
 
-        if (reservas.length === 0) {
-            console.log("[RECORDATORIO] No hay reservas próximas para recordar.");
-            console.log("[RECORDATORIO] ========================================");
-            return { enviados: 0, errores: 0 };
-        }
+        // Corre cada 5 minutos: sin reservas que recordar no escribe nada en el log
+        // (antes eran ~1.150 líneas al día de "No hay reservas próximas").
+        if (reservas.length === 0) return { enviados: 0, errores: 0 };
+
+        console.log("[RECORDATORIO] ========================================");
+        console.log("[RECORDATORIO] Iniciando proceso de recordatorios...");
+        console.log("[RECORDATORIO] Fecha/Hora actual:", new Date().toLocaleString('es-CL'));
 
         console.log(`[RECORDATORIO] Encontradas ${reservas.length} reserva(s) próxima(s)`);
 

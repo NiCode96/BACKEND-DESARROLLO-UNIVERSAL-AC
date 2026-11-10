@@ -28,7 +28,6 @@ export default class TituloController {
 
     static async editarTituloPrincipal(req, res) {
         try {
-            console.log("Body recibido:", req.body); // 👀 para revisar qué llega
             const { nuevoTitulo } = req.body;
 
             if (!nuevoTitulo) {
@@ -49,7 +48,6 @@ export default class TituloController {
 
     static async editarSubtitulo(req, res){
         try {
-            console.log("Body recibido:", req.body); // 👀 para revisar qué llega
             const {nuevoSubtitulo} = req.body;
 
 
@@ -73,7 +71,6 @@ export default class TituloController {
 
     static async cambiarSobreNosotros(req, res){
         try {
-            console.log(req.body)
             const {nuevoSobreNosotros} = req.body;
 
             if(!nuevoSobreNosotros){
@@ -93,7 +90,6 @@ export default class TituloController {
 
     static async cambiarTituloProyectos(req, res){
         try {
-            console.log(req.body)
             const {nuevoTituloProyecto} = req.body;
 
             if (!nuevoTituloProyecto) {
@@ -116,7 +112,6 @@ export default class TituloController {
 
     static async cambiarTituloContacto(req, res){
         try {
-            console.log(req.body)
             const {contactoTitulo} = req.body;
 
             if (!contactoTitulo) {

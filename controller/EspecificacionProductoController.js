@@ -10,7 +10,6 @@ export default class EspecificacionProductoController{
         try {
 
             const {descripcionEspecificacion, id_subsubcategoria, id_EspecificacionProducto} = req.body;
-            console.log(req.body);
             if (!descripcionEspecificacion || !id_EspecificacionProducto) {
                 return res
                     .status(400)
@@ -38,7 +37,6 @@ export default class EspecificacionProductoController{
 //INSERTAR NUEVA ESPECIFICACION EN LA BASE DE DATOS
     static async insertarEspecificacion(req, res) {
         try {
-            console.log(req.body);
             const {descripcionEspecificacion, id_subsubcategoria} = req.body;
 
             if (!descripcionEspecificacion) {
@@ -113,7 +111,6 @@ export default class EspecificacionProductoController{
 // ELIMINACION LOGICA DE ESPECIFICACION
     static async eliminarEspecificacion(req, res) {
         try {
-            console.log(req.body);
             const {id_EspecificacionProducto} = req.body;
 
             if (!id_EspecificacionProducto) {

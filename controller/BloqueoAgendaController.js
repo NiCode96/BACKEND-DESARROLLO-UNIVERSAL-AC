@@ -9,7 +9,6 @@ export default class BloqueoAgendaController {
         try {
             const {id_profesional,fechaInicio,horaInicio,fechaFinalizacion,horaFinalizacion,motivo } = req.body;
             console.log('INSERTAR BLOEQUEO CONTROLLER REQ.BODY :')
-            console.log(req.body);
             console.log(" ");
 
             const BloqueoAgendaClass = new BloqueoAgenda();
@@ -38,7 +37,6 @@ export default class BloqueoAgendaController {
         try {
             const {id_bloqueo} = req.body;
             console.log('ELIMINAR BLOEQUEO CONTROLLER REQ.BODY :')
-            console.log(req.body);
             console.log(" ");
 
             const BloqueoAgendaClass = new BloqueoAgenda();
@@ -59,7 +57,6 @@ export default class BloqueoAgendaController {
         try {
             const {id_profesional} = req.body;
             console.log('SELECCIONAR POR PROFESIONAL BLOEQUEO CONTROLLER REQ.BODY :')
-            console.log(req.body);
             console.log(" ");
 
             const BloqueoAgendaClass = new BloqueoAgenda();

@@ -12,7 +12,6 @@ export default class CorreosAutomaticosController {
     static async enviarSeguimiento(req, res) {
         try {
             const { asunto, email, mensaje } = req.body;
-            console.log(req.body);
 
             // Validación básica
             if (!asunto || !email || !mensaje) {
@@ -95,7 +94,6 @@ export default class CorreosAutomaticosController {
         try {
             const { nombre, email, mensaje } = req.body;
             const { nombreEmpresa, correoEmpresa } = await obtenerDatosEmpresaConfig();
-            console.log(req.body);
 
             // Validación básica
             if (!nombre || !email || !mensaje) {
@@ -177,7 +175,6 @@ export default class CorreosAutomaticosController {
     static async enviarComprobanteCompra(req, res) {
         try {
             const { cliente, venta, productos } = req.body;
-            console.log("BODY COMPROBANTE:", req.body);
             const { nombreEmpresa, correoEmpresa } = await obtenerDatosEmpresaConfig();
 
             // Validación básica

@@ -9,7 +9,6 @@ export default class CategoriasController{
     static async actualizarCategoria(req, res) {
         try {
             const {descripcionCategoria, id_categoriaProducto} = req.body;
-            console.log(req.body);
             if (!descripcionCategoria || !id_categoriaProducto) {
                 return res
                     .status(400)
@@ -36,7 +35,6 @@ export default class CategoriasController{
 //INSERTAR NUEVA CATEGORIA EN LA BASE DE DATOS
     static async insertarCategoria(req, res) {
         try {
-            console.log(req.body);
             const {descripcionCategoria} = req.body;
 
             if (
@@ -111,7 +109,6 @@ static async seleccionCategoriasPorId(req, res) {
 // ELIMINACION LOGICA DE CAREGORIA
 static async eliminarCategoria(req, res) {
         try {
-            console.log(req.body);
             const {id_categoriaProducto} = req.body;
 
             if (!id_categoriaProducto) {

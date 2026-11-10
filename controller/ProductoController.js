@@ -8,7 +8,6 @@ export default class ProductoController {
     static async seleccionarProductoEspecifico_id(req, res) {
         try {
             const { id_producto } = req.body;
-            console.log(req.body);
 
             if (!id_producto) return res.status(404).json({message:"sindato"});
 
@@ -74,7 +73,6 @@ export default class ProductoController {
 //ACTUALIZAR PRODUCTO EN LA BASE DE DATOS
   static async actualizarProducto(req, res) {
     try {
-      console.log(req.body);
       const {
         tituloProducto,
         descripcionProducto,
@@ -145,7 +143,6 @@ export default class ProductoController {
 //INSERTAR NUEVO PRODUCTO EN LA BASE DE DATOS
   static async insertarProducto(req, res) {
     try {
-      console.log(req.body);
       const {
           tituloProducto,
           descripcionProducto,
@@ -313,7 +310,6 @@ export default class ProductoController {
 
   static async eliminarProducto(req, res) {
     try {
-        console.log(req.body);
       const {id_producto} = req.body;
 
       if (!id_producto) {
@@ -336,7 +332,6 @@ export default class ProductoController {
     static async marcarProductoComoOferta(req, res) {
         try {
             const {id_producto} = req.body;
-            console.log(req.body);
 
             if (!id_producto) {
                 return res.status(400).json({ message: "sindato" });
@@ -369,7 +364,6 @@ export default class ProductoController {
     static async marcarProductoNormal(req, res) {
         try {
             const {id_producto} = req.body;
-            console.log(req.body);
 
             if (!id_producto) {
                 return res.status(400).json({ message: "sindato" });
@@ -400,7 +394,6 @@ export default class ProductoController {
 //ACTUALIZAR STOCK EN LA BASE DE DATOS
     static async actualizarStock(req, res) {
         try {
-            console.log(req.body);
             const {cantidadStock, id_producto} = req.body;
 
             if (!id_producto){

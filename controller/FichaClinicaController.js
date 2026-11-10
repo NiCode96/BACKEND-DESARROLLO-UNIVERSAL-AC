@@ -23,7 +23,6 @@ export default class FichaClinicaController {
     static async seleccionarFichasPaciente(req, res) {
         try {
             const {id_paciente} = req.body;
-            console.log(req.body);
 
 
             if (!id_paciente) {
@@ -62,7 +61,6 @@ export default class FichaClinicaController {
                 id_ficha
             } = req.body;
 
-            console.log(req.body);
 
             const datosdinamicos_json_stringfy = datosDinamicos ? JSON.stringify(datosDinamicos) : null;
 
@@ -118,7 +116,6 @@ export default class FichaClinicaController {
                 id_plantilla,
                 datosDinamicos
             } = req.body;
-            console.log(req.body);
 
             const datosDinamicos_json_stringfy = datosDinamicos ? JSON.stringify(datosDinamicos) : null;
 
@@ -162,7 +159,6 @@ export default class FichaClinicaController {
     //5. FUNCION CONTROLLER PARA ELIMINAR FICHA CLINICA DE MANERA LOGICA DEJANDOLA EN ESTADO CERO USANDO ID DE PACIENTE E ID DE LA FICHA
     static async eliminarFicha(req, res) {
         try {
-            console.log(req.body);
             const {id_ficha} = req.body;
 
             if (!id_ficha) {
@@ -241,7 +237,6 @@ export default class FichaClinicaController {
         try {
 
             const {observaciones} = req.body;
-            console.log( req.body);
 
             if (!observaciones) {
                 return res.status(400).json({message: "sindato"});

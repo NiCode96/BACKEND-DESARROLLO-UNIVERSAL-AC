@@ -11,7 +11,6 @@ export default class MercadoPagoPersistenceController {
                 access_token,
             }=req.body;
 
-            console.log(req.body);
 
             if(!nombre_cliente || !access_token){
                 return res.status(400).send({
@@ -52,7 +51,6 @@ export default class MercadoPagoPersistenceController {
             }=req.body;
 
             console.log(`Datos llegados para el cambio de datos para mercado pago:`);
-            console.log(req.body);
 
             if(!nombre_cliente || !access_token || !id_mercadoPago_persistence){
                 return res.status(400).send({

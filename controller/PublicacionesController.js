@@ -17,7 +17,6 @@ export default class PublicacionesController {
                 id_publicaciones
             } = req.body;
 
-            console.log(req.body);
             if (!descripcionPublicaciones || !id_publicaciones) {
                 return res.status(400).json({ message: "sindato" });
             }
@@ -47,7 +46,6 @@ export default class PublicacionesController {
     //INSERTAR NUEVA PUBLICACION EN LA BASE DE DATOS
     static async insertarPublicacion(req, res) {
         try {
-            console.log(req.body);
             const {
                 descripcionPublicaciones,
                 imagenPublicaciones_primera,
@@ -130,7 +128,6 @@ export default class PublicacionesController {
     //METODO PARA ELIMINAR PPUBLICACION EN LA BASE DE DATOS
     static async eliminarPublicacion(req, res) {
         try {
-            console.log(req.body);
             const {id_publicaciones} = req.body;
 
             if (!id_publicaciones) {
