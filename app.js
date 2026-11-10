@@ -61,6 +61,8 @@ import verificacionRoutes from "./view/verificacionRoutes.js";
 import procedimientosRoutes from "./view/procedimientosRoutes.js";
 // Firma (grafía) del profesional con reverificación de Clerk: docs/firma, Fases 5 y 6
 import firmaProfesionalRoutes from "./view/firmaProfesionalRoutes.js";
+// Documentos con firma electrónica y aceptación del paciente con código: docs/firma, Fase 7
+import documentosRoutes from "./view/documentosRoutes.js";
 import telemedicinaRoutes from "./view/telemedicinaRoutes.js";
 import { exigirSesionClerk } from "./middleware/exigirSesionClerk.js";
 
@@ -140,6 +142,8 @@ app.use("/verificacion", verificacionRoutes);
 app.use("/procedimientos", procedimientosRoutes);
 // Sesión obligatoria dentro del router; registrar y revocar piden reverificación reciente
 app.use("/firmaProfesional", firmaProfesionalRoutes);
+// Sesión obligatoria dentro del router; firmar y anular piden reverificación reciente
+app.use("/documentos", documentosRoutes);
 
 
 app.get('/recordatorios/ejecutar', async (req, res) => {
