@@ -320,6 +320,17 @@ export default class NotificacionAgendamiento {
             `Si no puedes asistir, por favor cancela con anticipación.\n\n` +
             `Saludos, ${empresa}.`;
 
+        // Código de la constancia de privacidad de esta reserva, igual que en la confirmación.
+        // (Antes se usaba sin definir aquí: el correo de actualización fallaba con ReferenceError.)
+        let codigoPrivacidad = null;
+        if (id_reserva) {
+            try {
+                codigoPrivacidad = await new ConsentimientoAceptacion().codigoPrivacidadPorReserva(id_reserva);
+            } catch (error) {
+                console.error("[MAIL] código de privacidad:", error.message);
+            }
+        }
+
         const html = construirHtmlCorreoPaciente({
             eyebrow: "Actualización de Reserva",
             titulo: `Tu cita en ${fromName} fue actualizada`,
