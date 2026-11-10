@@ -55,6 +55,8 @@ export function esAdministrador(usuario) {
 
 export const esProfesional = (usuario) => PERFILES_PROFESIONALES.has(perfil(usuario?.rol).base);
 
+export const esRecepcion = (usuario) => perfil(usuario?.rol).base === ROL_RECEPCION;
+
 /** Roles que trabajan con fichas clínicas: administradores y profesionales (no recepción). */
 export const esRolClinico = (usuario) => esAdministrador(usuario) || esProfesional(usuario);
 

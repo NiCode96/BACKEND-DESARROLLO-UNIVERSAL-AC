@@ -22,6 +22,7 @@ router.post("/enviarDocumentoCorreo", limitePorUsuario(10, 20), DocumentosContro
 router.post("/listarDocumentosPaciente", DocumentosController.listarDocumentosPaciente);
 router.post("/listarPendientesFirma", DocumentosController.listarPendientesFirma);
 router.post("/anularDocumento", exigirReverificacion(), DocumentosController.anularDocumento);
+router.post("/quitarPendiente", limitePorUsuario(10, 60), DocumentosController.quitarPendiente);
 router.post("/solicitarOtpPaciente", firmaHabilitada, limitePorUsuario(10, 15), DocumentosController.solicitarOtpPaciente);
 router.post("/verificarOtpPaciente", firmaHabilitada, limitePorUsuario(10, 30), DocumentosController.verificarOtpPaciente);
 

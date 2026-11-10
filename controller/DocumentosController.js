@@ -18,6 +18,7 @@ import { limitarEstampado } from "../services/firma/limitador.js";
 import { estamparFirma } from "../services/firma/estamparFirmaPdf.js";
 import { enviarCorreo, htmlDocumentoFirmado } from "../services/firma/correoFirma.js";
 import { enviarCodigoOtp, telefonoE164 } from "../services/firma/envioOtp.js";
+import { anularPendiente, venceEl } from "../services/firma/vencimientoDocumentos.js";
 import { enmascararCorreo, enmascararTelefono, CORREO_VALIDO } from "../services/firma/plantillas.js";
 import { esAdministrador, esProfesionalDueno, esRolClinico } from "../services/firma/roles.js";
 import { construirKeyPrivada, subirArchivo, eliminarArchivoR2, generarUrlDescarga, descargarArchivoComoBuffer } from "../services/r2Storage.js";
@@ -375,14 +376,37 @@ export default class DocumentosController {
                 esAdministrador(req.usuario) ? modelo.listarEnviadosPendientes(clerkId, idProfesional) : [],
                 esAdministrador(req.usuario) ? modelo.listarPendientesClinica(clerkId, idProfesional) : [],
             ]);
+            // vence_at: cuándo se anula solo si nadie lo firma (services/firma/vencimientoDocumentos.js).
+            const conVencimiento = (fila) => ({ ...aObjetoDocumento(fila), vence_at: venceEl(aObjetoDocumento(fila)) });
             return res.status(200).json({
                 message: true,
-                documentos: propios.map(aObjetoDocumento),
-                enviados: enviados.map(aObjetoDocumento),
-                clinica: clinica.map(aObjetoDocumento),
+                documentos: propios.map(conVencimiento),
+                enviados: enviados.map(conVencimiento),
+                clinica: clinica.map(conVencimiento),
             });
         } catch (error) {
             return respuestaError(res, error, "listarPendientesFirma");
+        }
+    }
+
+    // POST /documentos/quitarPendiente { id_documento, motivo? }
+    // Saca de la bandeja un documento que NO se ha firmado: el profesional firmante o la
+    // administración. Sin reverificación (nada firmado que proteger); queda el evento
+    // documento_anulado y se borra el borrador de R2. Un documento firmado se anula con
+    // anularDocumento, que sí pide reverificación.
+    static async quitarPendiente(req, res) {
+        try {
+            const documento = await new DocumentoEmitido().seleccionarPorId(req.body?.id_documento);
+            if (!documento) return res.status(404).json({ message: "noEncontrado" });
+            if (!puedeVer(req.usuario, documento)) return res.status(403).json({ message: "sinPermiso" });
+            if (documento.estado !== "pendiente_firma") return res.status(409).json({ message: documento.estado === "firmado" ? "documentoYaFirmado" : "documentoAnulado" });
+            const motivo = String(req.body?.motivo ?? "").trim().slice(0, 500) || "Quitado de la bandeja sin firmar";
+            const actor = { ...req.usuario, esFirmante: esProfesionalDueno(req.usuario, documento.id_profesional_firmante) };
+            const quitado = await anularPendiente({ id_documento: documento.id_documento, motivo, actor, contexto: req.contexto });
+            if (!quitado) return res.status(409).json({ message: "documentoYaFirmado" });
+            return res.status(200).json({ message: true });
+        } catch (error) {
+            return respuestaError(res, error, "quitarPendiente");
         }
     }
 

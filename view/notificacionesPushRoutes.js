@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import NotificacionesPushController from '../controller/NotificacionesPushController.js';
+import { exigirUsuarioClerk } from '../middleware/exigirUsuarioClerk.js';
 
 const router = Router();
 
@@ -18,9 +19,10 @@ const numericId = (req, res, next, val) =>
     /^\d+$/.test(val) ? next() : res.status(400).json({ message: 'idInvalido' });
 router.param('id', numericId);
 
-router.get('/pendientes', NotificacionesPushController.getNotificaciones);
-router.post('/:id/leer', NotificacionesPushController.marcarLeida);
-router.post('/leer-todas', NotificacionesPushController.marcarTodasLeidas);
+// La campana muestra a cada usuario solo lo suyo: hay que saber quién es (rol y agenda).
+router.get('/pendientes', exigirUsuarioClerk, NotificacionesPushController.getNotificaciones);
+router.post('/:id/leer', exigirUsuarioClerk, NotificacionesPushController.marcarLeida);
+router.post('/leer-todas', exigirUsuarioClerk, NotificacionesPushController.marcarTodasLeidas);
 
 router.get('/vapid-key', NotificacionesPushController.getVapidKey);
 router.post('/push-subscribe', limitarPushSubscribe, NotificacionesPushController.pushSubscribe);

@@ -63,6 +63,7 @@ import procedimientosRoutes from "./view/procedimientosRoutes.js";
 import firmaProfesionalRoutes from "./view/firmaProfesionalRoutes.js";
 // Documentos con firma electrónica y aceptación del paciente con código: docs/firma, Fase 7
 import documentosRoutes from "./view/documentosRoutes.js";
+import { revisarVencimientos } from "./services/firma/vencimientoDocumentos.js";
 import telemedicinaRoutes from "./view/telemedicinaRoutes.js";
 import { exigirSesionClerk } from "./middleware/exigirSesionClerk.js";
 
@@ -247,6 +248,18 @@ app.listen(PORT, () => {
             console.error("[CRON] Error en recordatorios automáticos:", e?.message);
         }
     }, 10000); // Esperar 10 segundos después de iniciar
+
+    // CRON FIRMA: vencimiento de documentos por firmar (aviso a los 7 días, anulación a los 30;
+    // consentimiento a las 24 h). Cada hora; la primera vuelta al minuto de arrancar.
+    const vencerDocumentos = async () => {
+        try {
+            await revisarVencimientos();
+        } catch (e) {
+            console.error("[CRON] Error en vencimiento de documentos:", e?.message);
+        }
+    };
+    setTimeout(vencerDocumentos, 60_000);
+    setInterval(vencerDocumentos, 60 * 60 * 1000);
 
     // CRON NOTIFICACIONES: limpiar notificaciones in-app leídas/antiguas — cada 30 min.
     console.log("[CRON] Iniciando cron job de limpieza de notificaciones in-app (cada 30 minutos)...");

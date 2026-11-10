@@ -1,4 +1,5 @@
 import DataBase from '../config/Database.js';
+import { esAdministrador, esProfesional, esRecepcion } from '../services/firma/roles.js';
 
 const db = () => DataBase.getInstance();
 
@@ -16,6 +17,21 @@ function suscripcionValida(endpoint, keys) {
     return true;
 }
 
+/* Quién ve qué en la campana (reserva de la ficha, Ley 20.584):
+ *  - un profesional: solo las suyas (sus citas y sus documentos por firmar);
+ *  - administración, técnico y recepción (gestionan la agenda): las citas del centro y las
+ *    propias, pero nunca los avisos de documentos por firmar de otro profesional;
+ *  - cualquier otro rol: ninguna.
+ * Antes todas las notificaciones le llegaban a todos, y "marcar todas" las borraba para todos. */
+function filtroVisibles(usuario) {
+    const propio = Number(usuario?.idProfesional) || -1;
+    if (esAdministrador(usuario) || esRecepcion(usuario)) {
+        return { sql: "(tipo <> 'documento_firma' OR id_profesional = ?)", params: [propio] };
+    }
+    if (esProfesional(usuario)) return { sql: "id_profesional = ?", params: [propio] };
+    return { sql: "1 = 0", params: [] };
+}
+
 export default class NotificacionesPushController {
 
     // ── Notificaciones in-app (campana del dashboard) ──────────────────────
@@ -25,11 +41,12 @@ export default class NotificacionesPushController {
             // Se ocultan cuando pasa la hora de la cita (fecha_evento) o cuando el
             // usuario las descarta explícitamente (visto=1, botón "X" o "marcar
             // todas"). Ya NO se marcan leídas solo por abrir el panel.
+            const filtro = filtroVisibles(req.usuario);
             const rows = await db().ejecutarQuery(
                 `SELECT * FROM notificaciones_inapp
-                 WHERE visto = 0 AND (fecha_evento IS NULL OR fecha_evento >= NOW())
+                 WHERE visto = 0 AND (fecha_evento IS NULL OR fecha_evento >= NOW()) AND ${filtro.sql}
                  ORDER BY creado_en DESC LIMIT 50`,
-                []
+                filtro.params
             );
             res.status(200).json(rows);
         } catch (error) {
@@ -44,7 +61,8 @@ export default class NotificacionesPushController {
             if (!Number.isInteger(id) || id <= 0) {
                 return res.status(400).json({ message: 'sindata' });
             }
-            await db().ejecutarQuery(`UPDATE notificaciones_inapp SET visto = 1 WHERE id = ?`, [id]);
+            const filtro = filtroVisibles(req.usuario);
+            await db().ejecutarQuery(`UPDATE notificaciones_inapp SET visto = 1 WHERE id = ? AND ${filtro.sql}`, [id, ...filtro.params]);
             res.status(200).json({ message: true });
         } catch (error) {
             console.error('[NOTIF]', error.message);
@@ -54,7 +72,8 @@ export default class NotificacionesPushController {
 
     static async marcarTodasLeidas(req, res) {
         try {
-            await db().ejecutarQuery(`UPDATE notificaciones_inapp SET visto = 1 WHERE visto = 0`, []);
+            const filtro = filtroVisibles(req.usuario);
+            await db().ejecutarQuery(`UPDATE notificaciones_inapp SET visto = 1 WHERE visto = 0 AND ${filtro.sql}`, filtro.params);
             res.status(200).json({ message: true });
         } catch (error) {
             console.error('[NOTIF]', error.message);
