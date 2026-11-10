@@ -54,6 +54,9 @@ export const exigirUsuarioClerk = async (req, res, next) => {
     }
 
     try {
+        // Comprobar una vez por instancia que el token trae el claim fva (docs/firma/04 §5.2):
+        // FIRMA_DEPURAR_FVA=1 en el .env. Solo imprime los dos números, nunca datos del usuario.
+        if (process.env.FIRMA_DEPURAR_FVA === "1") console.log("[CLERK] fva del token:", JSON.stringify(datos.fva ?? null));
         const usuario = await resolverUsuario(datos.sub);
         req.usuario = {
             ...usuario,
