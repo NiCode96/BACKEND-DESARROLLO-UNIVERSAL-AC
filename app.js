@@ -70,6 +70,8 @@ import { exigirSesionClerk } from "./middleware/exigirSesionClerk.js";
 
 
 const app = express();
+// No anunciar el framework ni su versión en cada respuesta.
+app.disable("x-powered-by");
 
 
 app.set('trust proxy', 1);
@@ -189,6 +191,25 @@ app.post('/test-whatsapp', async (req, res) => {
     }
 });
 
+// Errores no capturados por los controladores (JSON mal formado, cuerpo demasiado grande,
+// excepciones): siempre JSON y sin traza. Sin esto, Express responde una página HTML con
+// la ruta interna de los archivos del servidor (el proceso no corre con NODE_ENV=production).
+// eslint-disable-next-line no-unused-vars
+app.use((error, req, res, next) => {
+    if (res.headersSent) return;
+    if (error?.type === "entity.parse.failed") return res.status(400).json({ message: "datoinvalido" });
+    if (error?.type === "entity.too.large") return res.status(413).json({ message: "archivoDemasiadoGrande" });
+    console.error(`[APP] ${req.method} ${req.path}:`, error?.message);
+    return res.status(error?.status >= 400 && error?.status < 500 ? error.status : 500)
+        .json({ message: error?.status >= 400 && error?.status < 500 ? "datoinvalido" : "serverError" });
+});
+
+// Una promesa rechazada sin capturar (p. ej. dentro de un temporizador) no debe botar el
+// proceso entero: se registra y la aplicación sigue atendiendo.
+process.on("unhandledRejection", (motivo) => {
+    console.error("[APP] promesa rechazada sin capturar:", motivo?.message || motivo);
+});
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
@@ -197,7 +218,11 @@ app.listen(PORT, () => {
     // CRON JOB: Ejecutar recordatorios automáticos cada 5 minutos
     console.log("[CRON] Iniciando cron job de recordatorios (cada 5 minutos)...");
     setInterval(async () => {
-        await ejecutarRecordatoriosAutomaticos();
+        try {
+            await ejecutarRecordatoriosAutomaticos();
+        } catch (e) {
+            console.error("[CRON] Error en recordatorios automáticos:", e?.message);
+        }
     }, 5 * 60 * 1000); // 5 minutos en milisegundos
 
     const reservaPacientesClass = new ReservaPacientes();
@@ -209,14 +234,18 @@ app.listen(PORT, () => {
         try {
             await reservaPacientesClass.expirarReservasPendientes();
         } catch (e) {
-            console.error("[CRON] Error en cron job de expiración de reservas pendientes:", e);
+            console.error("[CRON] Error en cron job de expiración de reservas pendientes:", e?.message);
         }
     }, 60000);
 
     // Ejecutar una vez al iniciar el servidor
     setTimeout(async () => {
         console.log("[CRON] Ejecutando primera revisión de recordatorios...");
-        await ejecutarRecordatoriosAutomaticos();
+        try {
+            await ejecutarRecordatoriosAutomaticos();
+        } catch (e) {
+            console.error("[CRON] Error en recordatorios automáticos:", e?.message);
+        }
     }, 10000); // Esperar 10 segundos después de iniciar
 
     // CRON NOTIFICACIONES: limpiar notificaciones in-app leídas/antiguas — cada 30 min.

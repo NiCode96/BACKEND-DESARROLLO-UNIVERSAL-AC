@@ -20,6 +20,16 @@ function obtenerClerk() {
     return clerk;
 }
 
+// Si Clerk no responde, la petición termina con 503 en vez de quedar colgada (y ocupando memoria).
+const TIEMPO_LIMITE_CLERK_MS = Number(process.env.CLERK_TIEMPO_LIMITE_MS || 8000);
+function conTiempoLimite(promesa, contexto) {
+    let temporizador;
+    const limite = new Promise((_, rechazar) => {
+        temporizador = setTimeout(() => rechazar(Object.assign(new Error(`Clerk no respondió (${contexto})`), { tiempoLimite: true })), TIEMPO_LIMITE_CLERK_MS);
+    });
+    return Promise.race([promesa, limite]).finally(() => clearTimeout(temporizador));
+}
+
 const cache = new Map(); // clerkId → { usuario, vence }
 const DURACION_CACHE_MS = 60_000;
 
@@ -27,7 +37,7 @@ async function resolverUsuario(clerkId) {
     const guardado = cache.get(clerkId);
     if (guardado && guardado.vence > Date.now()) return guardado.usuario;
 
-    const u = await obtenerClerk().users.getUser(clerkId);
+    const u = await conTiempoLimite(obtenerClerk().users.getUser(clerkId), "getUser");
     const meta = u.publicMetadata || {};
     const usuario = {
         email: u.primaryEmailAddress?.emailAddress || u.emailAddresses?.[0]?.emailAddress || null,
@@ -48,8 +58,10 @@ export const exigirUsuarioClerk = async (req, res, next) => {
 
     let datos;
     try {
-        datos = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY });
-    } catch {
+        datos = await conTiempoLimite(verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY }), "verifyToken");
+    } catch (error) {
+        // Clerk caído no es "sin sesión": 503 para que el front pida reintentar.
+        if (error?.tiempoLimite) return res.status(503).json({ message: "serverError" });
         return res.status(401).json({ message: "noAutorizado" });
     }
 
