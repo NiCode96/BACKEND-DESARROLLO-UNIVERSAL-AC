@@ -358,12 +358,25 @@ export default class DocumentosController {
         }
     }
 
-    // POST /documentos/listarPendientesFirma → los que esperan la firma del usuario
+    // POST /documentos/listarPendientesFirma
+    //   documentos: los que esperan la firma del usuario (solo él puede firmarlos)
+    //   enviados:   los que preparó el usuario y esperan la firma de otro profesional
+    //   clinica:    (administración) el resto de lo pendiente del centro
     static async listarPendientesFirma(req, res) {
         try {
-            if (!req.usuario.idProfesional) return res.status(200).json({ message: true, documentos: [] });
-            const filas = await new DocumentoEmitido().listarPendientesPorFirmante(req.usuario.idProfesional);
-            return res.status(200).json({ message: true, documentos: filas.map(aObjetoDocumento) });
+            const modelo = new DocumentoEmitido();
+            const { idProfesional, clerkId } = req.usuario;
+            const [propios, enviados, clinica] = await Promise.all([
+                idProfesional ? modelo.listarPendientesPorFirmante(idProfesional) : [],
+                modelo.listarEnviadosPendientes(clerkId, idProfesional),
+                esAdministrador(req.usuario) ? modelo.listarPendientesClinica(clerkId, idProfesional) : [],
+            ]);
+            return res.status(200).json({
+                message: true,
+                documentos: propios.map(aObjetoDocumento),
+                enviados: enviados.map(aObjetoDocumento),
+                clinica: clinica.map(aObjetoDocumento),
+            });
         } catch (error) {
             return respuestaError(res, error, "listarPendientesFirma");
         }

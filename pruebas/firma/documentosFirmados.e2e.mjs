@@ -312,6 +312,20 @@ test("listados: por paciente (rol clínico) y pendientes de la firmante", async 
     assert.deepEqual((await post("/documentos/listarPendientesFirma", {}, "admin")).cuerpo.documentos, []);
 });
 
+test("bandeja: lo que otro prepara para la firmante aparece en sus 'documentos', en los 'enviados' de quien lo preparó y en 'clinica' para administración", async () => {
+    const doc = (await preparar({ usuario: "otro", tipo: "ficha_clinica" })).cuerpo.documento;
+    const deDuenia = (await post("/documentos/listarPendientesFirma", {}, "duenio")).cuerpo;
+    assert.ok(deDuenia.documentos.some((d) => d.id_documento === doc.id_documento), "la firmante lo ve para firmar");
+    assert.ok(!deDuenia.enviados.some((d) => d.id_documento === doc.id_documento));
+    assert.deepEqual(deDuenia.clinica, [], "una profesional no ve lo de toda la clínica");
+    const deOtro = (await post("/documentos/listarPendientesFirma", {}, "otro")).cuerpo;
+    assert.ok(deOtro.enviados.some((d) => d.id_documento === doc.id_documento && d.firmante_nombre), "quien lo preparó lo ve esperando, con el nombre de la firmante");
+    assert.ok(!deOtro.documentos.some((d) => d.id_documento === doc.id_documento), "pero no puede firmarlo");
+    const deAdmin = (await post("/documentos/listarPendientesFirma", {}, "admin")).cuerpo;
+    assert.ok(deAdmin.clinica.some((d) => d.id_documento === doc.id_documento), "administración ve todo lo pendiente");
+    assert.deepEqual((await post("/documentos/firmarDocumento", { id_documento: doc.id_documento }, "otro")).cuerpo, { message: "sinPermiso" });
+});
+
 test("anular: pide reverificación y motivo; un anulado no se firma y queda en la evidencia", async () => {
     const doc = (await preparar({ tipo: "orden_examen" })).cuerpo.documento;
     assert.equal((await post("/documentos/anularDocumento", { id_documento: doc.id_documento, motivo: "Error" }, "duenio", "40,-1")).status, 403);

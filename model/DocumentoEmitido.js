@@ -103,6 +103,24 @@ export default class DocumentoEmitido {
         );
     }
 
+    /** Preparados por este usuario que esperan la firma de OTRO profesional (secretaría, colegas). */
+    async listarEnviadosPendientes(clerkId, id_profesional) {
+        return DataBase.getInstance().ejecutarQuery(
+            `${SELECT_DOCUMENTO} WHERE d.preparado_por_clerk_id = ? AND d.estado = 'pendiente_firma'
+               AND (? IS NULL OR d.id_profesional_firmante <> ?) ORDER BY d.preparado_at DESC LIMIT 200`,
+            [clerkId, id_profesional ?? null, id_profesional ?? null]
+        );
+    }
+
+    /** Administración: todo lo pendiente de la clínica que no es del usuario ni lo preparó él. */
+    async listarPendientesClinica(clerkId, id_profesional) {
+        return DataBase.getInstance().ejecutarQuery(
+            `${SELECT_DOCUMENTO} WHERE d.estado = 'pendiente_firma' AND d.preparado_por_clerk_id <> ?
+               AND (? IS NULL OR d.id_profesional_firmante <> ?) ORDER BY d.preparado_at DESC LIMIT 200`,
+            [clerkId, id_profesional ?? null, id_profesional ?? null]
+        );
+    }
+
     async marcarFirmado(conexion, id_documento, f) {
         return conexion.query(
             `UPDATE documento_emitido SET estado = 'firmado', id_firma = UUID_TO_BIN(?), firmado_por_usuario = UUID_TO_BIN(?),
