@@ -1,11 +1,16 @@
 import { construirCorreoBase, construirTablaDetalle } from "./emailTemplateBase.js";
+import { obtenerDatosEmpresaConfig } from "./datosEmpresaConfig.js";
+import { adjuntoIcsCita } from "./icsCita.js";
 
 export default async function enviarCorreoProfesionales(
     correoProfesional,
     nombreProfesional,
     nombreDelPaciente,
     fechaAtencion,
-    horaAtencion
+    horaAtencion,
+    // Opcional: { id_reserva, nombrePaciente, apellidoPaciente, fechaFinalizacion, horaFinalizacion }.
+    // Con él se adjunta el .ics para que la cita quede en el calendario del profesional.
+    cita = null
 
 ) {
 
@@ -39,6 +44,24 @@ export default async function enviarCorreoProfesionales(
 
     const { BREVO_API_KEY, CORREO_REMITENTE } = process.env;
 
+    let adjuntoICS = null;
+    if (cita?.id_reserva) {
+        const { nombreEmpresa: nombreClinica, direccionEmpresa } = await obtenerDatosEmpresaConfig().catch(() => ({}));
+        adjuntoICS = adjuntoIcsCita({
+            para: "equipo",
+            id_reserva: cita.id_reserva,
+            nombreProfesional: profesional,
+            nombrePaciente: cita.nombrePaciente,
+            apellidoPaciente: cita.apellidoPaciente,
+            nombreClinica: nombreClinica || nombreEmpresa,
+            direccion: direccionEmpresa,
+            fechaInicio: fechaAtencion,
+            horaInicio: horaAtencion,
+            fechaFinalizacion: cita.fechaFinalizacion,
+            horaFinalizacion: cita.horaFinalizacion,
+        });
+    }
+
     if (!BREVO_API_KEY) {
         console.error("BREVO_API_KEY no configurada");
         return;
@@ -63,6 +86,7 @@ export default async function enviarCorreoProfesionales(
         subject: paciente ? `Nueva reserva asignada - ${paciente}` : "Nueva reserva asignada",
         htmlContent: message,
 
+        ...(adjuntoICS ? { attachment: [adjuntoICS] } : {}),
         textContent: `Nueva reserva asignada. Paciente: ${paciente || "-"}. Fecha: ${fechaAtencion || "-"} ${horaAtencion || "-"}.`
     };
 

@@ -306,7 +306,8 @@ export default class ReservaPacienteController {
                     nombreProfesionalCorreo,
                     nombreDelPaciente,
                     fechaInicio,
-                    horaInicio
+                    horaInicio,
+                    { id_reserva, nombrePaciente, apellidoPaciente, fechaFinalizacion, horaFinalizacion }
                 ).catch(err => {
                     console.error("[MAIL] Error:", err.message);
                 });
@@ -517,7 +518,8 @@ export default class ReservaPacienteController {
                     nombreProfesionalCorreo,
                     nombreDelPaciente,
                     fechaInicio,
-                    horaInicio
+                    horaInicio,
+                    { id_reserva: resultadoQuery.insertId, nombrePaciente, apellidoPaciente, fechaFinalizacion, horaFinalizacion }
                     ).catch(err => {
                     console.error("[MAIL] Error:", err.message);
                 });
@@ -775,7 +777,8 @@ export default class ReservaPacienteController {
                     nombreProfesionalCorreo,
                     nombreDelPaciente,
                     fechaInicio,
-                    horaInicio
+                    horaInicio,
+                    { id_reserva: resultadoQuery.insertId, nombrePaciente, apellidoPaciente, fechaFinalizacion, horaFinalizacion }
                 ).catch(err => {
                     console.error("[MAIL] Error:", err.message);
                 });

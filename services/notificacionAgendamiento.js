@@ -2,7 +2,7 @@ import { construirEnlacesReservaToken } from "./notificacionReservaToken.js";
 import { obtenerDatosEmpresaConfig } from "./datosEmpresaConfig.js";
 import ReservaPacientes from "../model/ReservaPacientes.js";
 import Profesionales from "../model/Profesionales.js";
-import { generarICSBase64 } from "./icsUtils.js";
+import { adjuntoIcsCita } from "./icsCita.js";
 import { construirCorreoBase, construirTablaDetalle, construirBoton, TEXTO_PRINCIPAL, TEXTO_SECUNDARIO, formatearRutCorreo } from "./emailTemplateBase.js";
 import ConsentimientoAceptacion from "../model/ConsentimientoAceptacion.js";
 
@@ -93,45 +93,7 @@ async function completarDatosCorreoEquipo(datosCorreo) {
     }
 }
 
-function pad2(n) {
-    return String(n).padStart(2, "0");
-}
-
-// Acepta fecha como Date o string 'YYYY-MM-DD' y hora como 'HH:MM' o 'HH:MM:SS'.
-// Devuelve 'YYYY-MM-DDTHH:MM:SS' (hora local del servidor, sin 'Z') o null si falta la fecha.
-function combinarFechaHora(fecha, hora) {
-    if (!fecha) return null;
-    const fechaBase = fecha instanceof Date
-        ? `${fecha.getFullYear()}-${pad2(fecha.getMonth() + 1)}-${pad2(fecha.getDate())}`
-        : String(fecha).slice(0, 10);
-    const horaBase = hora ? String(hora).slice(0, 8) : "00:00:00";
-    return `${fechaBase}T${horaBase}`;
-}
-
-// Nunca lanza: si algo falla al armar el .ics, el correo se envía igual sin adjunto.
-function construirAdjuntoICS({ id_reserva, titulo, descripcion, ubicacion, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion, nombreCalendario }) {
-    try {
-        const inicio = combinarFechaHora(fechaInicio, horaInicio);
-        if (!inicio) return null;
-        const fin = combinarFechaHora(fechaFinalizacion || fechaInicio, horaFinalizacion || horaInicio);
-
-        const ics = generarICSBase64({
-            uid: `cita-${id_reserva}@agendaclinica.cl`,
-            titulo,
-            descripcion,
-            ubicacion,
-            fechaInicio: inicio,
-            fechaFin: fin,
-            todoElDia: false,
-            nombreCalendario,
-        });
-
-        return { content: ics, name: "cita.ics" };
-    } catch (error) {
-        console.error("[ICS] No se pudo generar el adjunto .ics:", error.message);
-        return null;
-    }
-}
+// El .ics de la cita se arma en services/icsCita.js (paciente y equipo).
 
 function construirHtmlCorreoPaciente({
     eyebrow = "Agenda Clinica",
@@ -355,16 +317,17 @@ export default class NotificacionAgendamiento {
             codigoPrivacidad
         });
 
-        const adjuntoICS = construirAdjuntoICS({
+        // Calendario del paciente: sin su nombre ni el motivo (services/icsCita.js).
+        const adjuntoICS = adjuntoIcsCita({
+            para: "paciente",
             id_reserva,
-            titulo: `Cita con ${nombreProfesional || fromName}`,
-            descripcion: `Paciente: ${nombrePaciente} ${apellidoPaciente}. Motivo: ${motivo_reserva || "-"}.`,
-            ubicacion: direccionEmpresa,
+            nombreProfesional,
+            nombreClinica: fromName,
+            direccion: direccionEmpresa,
             fechaInicio,
             horaInicio,
             fechaFinalizacion,
-            horaFinalizacion,
-            nombreCalendario: fromName
+            horaFinalizacion
         });
 
         const payload = {
@@ -516,16 +479,17 @@ export default class NotificacionAgendamiento {
             fromName
         });
 
-        const adjuntoICS = construirAdjuntoICS({
+        // Calendario del paciente: sin su nombre ni el motivo (services/icsCita.js).
+        const adjuntoICS = adjuntoIcsCita({
+            para: "paciente",
             id_reserva,
-            titulo: `Cita con ${nombreProfesional || fromName}`,
-            descripcion: `Paciente: ${nombrePaciente} ${apellidoPaciente}. Motivo: ${motivo_reserva || "-"}.`,
-            ubicacion: direccionEmpresa,
+            nombreProfesional,
+            nombreClinica: fromName,
+            direccion: direccionEmpresa,
             fechaInicio,
             horaInicio,
             fechaFinalizacion,
-            horaFinalizacion,
-            nombreCalendario: fromName
+            horaFinalizacion
         });
 
         const payload = {
@@ -728,16 +692,18 @@ export default class NotificacionAgendamiento {
         });
 
         // No se envía .ics para una cancelación (no tiene sentido invitar a un evento que ya no ocurrirá).
-        const adjuntoICS = accion === "CANCELADA" ? null : construirAdjuntoICS({
+        const adjuntoICS = accion === "CANCELADA" ? null : adjuntoIcsCita({
+            para: "equipo",
             id_reserva,
-            titulo: `Cita con ${profesionalCorreo}`,
-            descripcion: `Paciente: ${nombrePaciente} ${apellidoPaciente}. Motivo: ${motivoCorreo}.`,
-            ubicacion: direccionEmpresa,
+            nombreProfesional: profesionalCorreo,
+            nombrePaciente,
+            apellidoPaciente,
+            nombreClinica: fromName,
+            direccion: direccionEmpresa,
             fechaInicio,
             horaInicio,
             fechaFinalizacion,
-            horaFinalizacion,
-            nombreCalendario: fromName
+            horaFinalizacion
         });
 
         const payload = {
