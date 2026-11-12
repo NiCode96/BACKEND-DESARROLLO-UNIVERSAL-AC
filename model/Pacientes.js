@@ -142,11 +142,12 @@ export default class Pacientes {
 
 
 // ACTUALIZACION DE PACIENTE POR ID
-    async updatePaciente(nombre,apellido,rut,nacimiento,sexo,prevision_id,telefono,correo,direccion,pais,observacion1,observacion2,observacion3,apoderado,apoderado_rut,medicamentosUsados,habitos,comentariosAdicionales,id_paciente){
+    async updatePaciente(nombre,apellido,rut,nacimiento,sexo,prevision_id,telefono,correo,direccion,pais,observacion1,observacion2,observacion3,apoderado,apoderado_rut,medicamentosUsados,habitos,comentariosAdicionales,id_paciente,tipo_documento = null){
         const conexion = DataBase.getInstance();
         const correoNormalizado = correo && String(correo).trim() ? String(correo).trim() : null;
-        const query = 'UPDATE pacienteDatos SET nombre= ? ,apellido = ? , rut = ?, nacimiento = ?, sexo = ?, prevision_id = ?, telefono = ?, correo = ? , direccion = ?, pais = ?, observacion1 = ?, observacion2 = ?, observacion3 = ?, apoderado = ?, apoderado_rut = ?, medicamentosUsados = ?, habitos = ?, comentariosAdicionales = ? WHERE id_paciente = ?';
-        const param = [nombre,apellido,rut,nacimiento,sexo,prevision_id,telefono,correoNormalizado,direccion,pais,observacion1,observacion2,observacion3,apoderado,apoderado_rut,medicamentosUsados,habitos,comentariosAdicionales,id_paciente ];
+        const query = 'UPDATE pacienteDatos SET nombre= ? ,apellido = ? , rut = ?, nacimiento = ?, sexo = ?, prevision_id = ?, telefono = ?, correo = ? , direccion = ?, pais = ?, observacion1 = ?, observacion2 = ?, observacion3 = ?, apoderado = ?, apoderado_rut = ?, medicamentosUsados = ?, habitos = ?, comentariosAdicionales = ?, tipo_documento = COALESCE(?, tipo_documento) WHERE id_paciente = ?';
+        // tipo_documento en null = el cliente no lo envió: se conserva el guardado.
+        const param = [nombre,apellido,rut,nacimiento,sexo,prevision_id,telefono,correoNormalizado,direccion,pais,observacion1,observacion2,observacion3,apoderado,apoderado_rut,medicamentosUsados,habitos,comentariosAdicionales,tipo_documento,id_paciente ];
         try {
             const existeRut = await this.existeRutRegistrado(rut, id_paciente);
             if (existeRut) {
@@ -165,7 +166,7 @@ export default class Pacientes {
 
 
 // INSERCION DE NUEVO PACIENTE EN LA BASE DE DATOS
-    async insertPaciente(nombre,apellido,rut,nacimiento,sexo,prevision_id,telefono,correo,direccion,pais,observacion1,observacion2,observacion3,apoderado,apoderado_rut,medicamentosUsados,habitos,comentariosAdicionales){
+    async insertPaciente(nombre,apellido,rut,nacimiento,sexo,prevision_id,telefono,correo,direccion,pais,observacion1,observacion2,observacion3,apoderado,apoderado_rut,medicamentosUsados,habitos,comentariosAdicionales,tipo_documento = "rut"){
         try {
         const conexion = DataBase.getInstance();
         const correoNormalizado = correo && String(correo).trim() ? String(correo).trim() : null;
@@ -176,7 +177,7 @@ export default class Pacientes {
                 return {duplicado: true}
 
             }else{
-                const query = 'INSERT INTO pacienteDatos (nombre,apellido,rut,nacimiento,sexo,prevision_id,telefono,correo,direccion,pais,observacion1,observacion2,observacion3,apoderado,apoderado_rut,medicamentosUsados,habitos,comentariosAdicionales) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                const query = 'INSERT INTO pacienteDatos (nombre,apellido,rut,nacimiento,sexo,prevision_id,telefono,correo,direccion,pais,observacion1,observacion2,observacion3,apoderado,apoderado_rut,medicamentosUsados,habitos,comentariosAdicionales,tipo_documento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
                 const param = [
                     nombre,
                     apellido,
@@ -195,7 +196,8 @@ export default class Pacientes {
                     apoderado_rut,
                     medicamentosUsados,
                     habitos,
-                    comentariosAdicionales];
+                    comentariosAdicionales,
+                    tipo_documento];
 
                 const resultado = await conexion.ejecutarQuery(query,param);
                 return resultado;
@@ -235,7 +237,7 @@ export default class Pacientes {
 
 
 // INSERCION DE NUEVO PACIENTE EN LA BASE DE DATOS
-    async insertPacientemp(nombre,apellido,rut,nacimiento,sexo,prevision_id,telefono,correo,direccion,pais,observacion1 = null,observacion2 = null,observacion3 = null,apoderado = null,apoderado_rut = null,medicamentosUsados = null,habitos = null,comentariosAdicionales = null){
+    async insertPacientemp(nombre,apellido,rut,nacimiento,sexo,prevision_id,telefono,correo,direccion,pais,observacion1 = null,observacion2 = null,observacion3 = null,apoderado = null,apoderado_rut = null,medicamentosUsados = null,habitos = null,comentariosAdicionales = null,tipo_documento = "rut"){
         const conexion = DataBase.getInstance();
         const correoNormalizado = correo && String(correo).trim() ? String(correo).trim() : null;
 
@@ -247,8 +249,8 @@ export default class Pacientes {
                 return { duplicado: true };
             }else{
 
-                const query = 'INSERT INTO pacienteDatos (nombre,apellido,rut,nacimiento,sexo,prevision_id,telefono,correo,direccion,pais,observacion1,observacion2,observacion3,apoderado,apoderado_rut,medicamentosUsados,habitos,comentariosAdicionales) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-                const param = [nombre, apellido, rut, nacimiento, sexo, prevision_id, telefono, correoNormalizado, direccion, pais, observacion1, observacion2, observacion3, apoderado, apoderado_rut, medicamentosUsados, habitos, comentariosAdicionales];
+                const query = 'INSERT INTO pacienteDatos (nombre,apellido,rut,nacimiento,sexo,prevision_id,telefono,correo,direccion,pais,observacion1,observacion2,observacion3,apoderado,apoderado_rut,medicamentosUsados,habitos,comentariosAdicionales,tipo_documento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                const param = [nombre, apellido, rut, nacimiento, sexo, prevision_id, telefono, correoNormalizado, direccion, pais, observacion1, observacion2, observacion3, apoderado, apoderado_rut, medicamentosUsados, habitos, comentariosAdicionales, tipo_documento];
                 const resultado = await conexion.ejecutarQuery(query,param);
                 if (resultado){
                     return resultado;

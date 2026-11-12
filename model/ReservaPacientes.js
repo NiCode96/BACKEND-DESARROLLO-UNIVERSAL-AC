@@ -188,7 +188,8 @@ export default class ReservaPacientes {
         id_profesional,
         id_reserva,
         prevision = null,
-        comentario = null) {
+        comentario = null,
+        tipo_documento = null) {
         const {connection, lockKey} = await this.obtenerConexionConBloqueoAgenda(id_profesional);
 
         try {
@@ -211,8 +212,8 @@ export default class ReservaPacientes {
 
 
             // prevision/comentario en null = el cliente no los envió: COALESCE conserva lo guardado.
-            const query = "UPDATE reservaPacientes SET nombrePaciente = ? , apellidoPaciente = ?, rut = ? , telefono = ? , email = ? , fechaInicio = ?  , horaInicio = ? , fechaFinalizacion = ? , horaFinalizacion = ? ,monto_reserva = ? , motivo_reserva = ?, estadoReserva = ? , id_profesional = ? , prevision = COALESCE(?, prevision), comentario = COALESCE(?, comentario), recordatorio12h = 0, recordatorio6h = 0, wspRecordatorio12h = 0, wspRecordatorio6h = 0, wspRecordatorio1h = 0 WHERE id_reserva = ?";
-            const params = [nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, id_profesional, prevision, comentario, id_reserva];
+            const query = "UPDATE reservaPacientes SET nombrePaciente = ? , apellidoPaciente = ?, rut = ? , telefono = ? , email = ? , fechaInicio = ?  , horaInicio = ? , fechaFinalizacion = ? , horaFinalizacion = ? ,monto_reserva = ? , motivo_reserva = ?, estadoReserva = ? , id_profesional = ? , prevision = COALESCE(?, prevision), comentario = COALESCE(?, comentario), tipo_documento = COALESCE(?, tipo_documento), recordatorio12h = 0, recordatorio6h = 0, wspRecordatorio12h = 0, wspRecordatorio6h = 0, wspRecordatorio1h = 0 WHERE id_reserva = ?";
+            const params = [nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, id_profesional, prevision, comentario, tipo_documento, id_reserva];
             const [resultadoQuery] = await connection.query(query, params);
             return resultadoQuery;
         } finally {
@@ -276,7 +277,7 @@ export default class ReservaPacientes {
 
 
     //METODO PARA INSERTAR NUEVAS CITAS MEDICAS
-    async insertarReservaPaciente(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, id_profesional, prevision = VALOR_NO_INDICADO, comentario = VALOR_NO_INDICADO) {
+    async insertarReservaPaciente(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, id_profesional, prevision = VALOR_NO_INDICADO, comentario = VALOR_NO_INDICADO, tipo_documento = "rut") {
         const {connection, lockKey} = await this.obtenerConexionConBloqueoAgenda(id_profesional);
 
         try {
@@ -296,8 +297,8 @@ export default class ReservaPacientes {
                 );
             }
 
-            const query = "INSERT INTO reservaPacientes(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio,fechaFinalizacion, horaFinalizacion,monto_reserva,motivo_reserva, estadoReserva, id_profesional, prevision, comentario) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-            const params = [nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, id_profesional, prevision, comentario];
+            const query = "INSERT INTO reservaPacientes(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio,fechaFinalizacion, horaFinalizacion,monto_reserva,motivo_reserva, estadoReserva, id_profesional, prevision, comentario, tipo_documento) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            const params = [nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, id_profesional, prevision, comentario, tipo_documento];
             const [resultadoQuery] = await connection.query(query, params);
             return resultadoQuery;
         } finally {
@@ -453,7 +454,8 @@ export default class ReservaPacientes {
         estadoPeticion,
         id_profesional,
         prevision = VALOR_NO_INDICADO,
-        comentario = VALOR_NO_INDICADO) {
+        comentario = VALOR_NO_INDICADO,
+        tipo_documento = "rut") {
         const {connection, lockKey} = await this.obtenerConexionConBloqueoAgenda(id_profesional);
         try {
             const disponible = await this.validarDisponibilidadEnConexion(
@@ -474,8 +476,8 @@ export default class ReservaPacientes {
 
             const fechaActualMas10Minutos = new Date(Date.now() + 10 * 60 * 1000);
 
-            const query = `INSERT INTO reservaPacientes(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio,fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, preference_id, estadoPeticion,id_profesional, fechaExpiracionPago, prevision, comentario) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-            const params = [nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion,monto_reserva, motivo_reserva, estadoReserva, preference_id, estadoPeticion, id_profesional, fechaActualMas10Minutos, prevision, comentario];
+            const query = `INSERT INTO reservaPacientes(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio,fechaFinalizacion, horaFinalizacion, monto_reserva, motivo_reserva, estadoReserva, preference_id, estadoPeticion,id_profesional, fechaExpiracionPago, prevision, comentario, tipo_documento) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+            const params = [nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion,monto_reserva, motivo_reserva, estadoReserva, preference_id, estadoPeticion, id_profesional, fechaActualMas10Minutos, prevision, comentario, tipo_documento];
             const [resultadoQuery] = await connection.query(query, params);
             return resultadoQuery;
         } finally {

@@ -1,6 +1,12 @@
 /* Validación de documentos de identidad (misma regla que src/lib/rut.js del front).
  *  - RUT chileno: dígito verificador por módulo 11.
- *  - Pasaporte: 5 a 20 caracteres alfanuméricos (pacientes extranjeros). */
+ *  - Pasaporte o DNI (pacientes extranjeros): 5 a 20 caracteres alfanuméricos. El DNI
+ *    (cédula de otro país) no tiene una regla común entre países: se valida igual que el
+ *    pasaporte, y el tipo queda guardado para mostrar el documento correcto. */
+
+export const TIPOS_DOCUMENTO = Object.freeze(["rut", "pasaporte", "dni"]);
+export const ETIQUETAS_DOCUMENTO = Object.freeze({ rut: "RUT", pasaporte: "Pasaporte", dni: "DNI" });
+export const esDocumentoExtranjero = (tipo) => tipo === "pasaporte" || tipo === "dni";
 
 export const limpiarRut = (rut) => String(rut ?? "").replace(/[^0-9kK]/g, "").toUpperCase();
 
@@ -26,6 +32,14 @@ export const pasaporteValido = (valor) => /^[0-9A-Z]{5,20}$/.test(limpiarPasapor
 
 /** Normaliza y valida según el tipo. Devuelve el documento limpio o null si no es válido. */
 export function documentoNormalizado(tipo, valor) {
-    if (tipo === "pasaporte") return pasaporteValido(valor) ? limpiarPasaporte(valor) : null;
+    if (esDocumentoExtranjero(tipo)) return pasaporteValido(valor) ? limpiarPasaporte(valor) : null;
     return rutValido(valor) ? limpiarRut(valor) : null;
+}
+
+/** "Pasaporte AB1234567", "DNI 30123456" o "RUT 12.345.678-9" (para PDF y correos). */
+export function textoDocumento(tipo, valor) {
+    if (esDocumentoExtranjero(tipo)) return `${ETIQUETAS_DOCUMENTO[tipo]} ${limpiarPasaporte(valor)}`;
+    const limpio = limpiarRut(valor);
+    if (!rutValido(limpio)) return `RUT ${String(valor ?? "").trim()}`;
+    return `RUT ${limpio.slice(0, -1).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}-${limpio.slice(-1)}`;
 }

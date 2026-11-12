@@ -10,6 +10,7 @@
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 import { bloquesDeTexto } from "./plantillas.js";
+import { ETIQUETAS_DOCUMENTO, esDocumentoExtranjero } from "./rut.js";
 
 const NEGRO = [29, 29, 31];
 const OSCURO = [58, 58, 60];
@@ -116,7 +117,7 @@ export async function generarConstancia({ empresa, titulo, codigoPlantilla, vers
     fuente("normal", 7, MEDIO);
     doc.text(codigo, ancho - m - 19, y + 39, { align: "center" });
 
-    const documento = paciente.tipo_documento === "pasaporte" ? `Pasaporte ${paciente.documento}` : `RUT ${paciente.documento}`;
+    const documento = esDocumentoExtranjero(paciente.tipo_documento) ? `${ETIQUETAS_DOCUMENTO[paciente.tipo_documento]} ${paciente.documento}` : `RUT ${paciente.documento}`;
     const filas = [
         ["Aceptado por", `${paciente.nombre} ${paciente.apellido} · ${documento}`],
         ["Fecha y hora", textoFecha],

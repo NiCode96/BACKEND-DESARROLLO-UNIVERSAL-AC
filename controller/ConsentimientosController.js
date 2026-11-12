@@ -7,7 +7,7 @@ import Pacientes from "../model/Pacientes.js";
 import { nuevoId, codigoVerificacion, tokenAceptacion, esDuplicado } from "../services/firma/identificadores.js";
 import { ahoraUtc, aMysqlUtc, formatearSantiagoConOffset } from "../services/firma/tiempo.js";
 import { sha256 } from "../services/firma/huellas.js";
-import { documentoNormalizado, limpiarRut } from "../services/firma/rut.js";
+import { documentoNormalizado, esDocumentoExtranjero, limpiarPasaporte, limpiarRut } from "../services/firma/rut.js";
 import { interpolarPlantilla, enmascararCorreo, CORREO_VALIDO } from "../services/firma/plantillas.js";
 import { registrarEvento } from "../services/firma/cadenaEvidencia.js";
 import { registrarAcceso } from "../services/firma/bitacora.js";
@@ -45,7 +45,9 @@ export async function vincularAceptacionConReserva(token, id_reserva, documento)
     if (!token || !/^ca_[0-9a-f]{32}$/.test(String(token))) return;
     try {
         const resultado = await new ConsentimientoAceptacion().vincularReserva(
-            String(token), id_reserva ?? null, limpiarRut(documento), aMysqlUtc(ahoraUtc())
+            // Misma limpieza que el SQL (mayúsculas, sin puntos ni guiones): conserva las letras
+            // de un pasaporte o DNI (limpiarRut las borraba y no encontraba al paciente).
+            String(token), id_reserva ?? null, String(documento ?? "").toUpperCase().replace(/[.\-\s]/g, ""), aMysqlUtc(ahoraUtc())
         );
         if (!resultado?.affectedRows) console.error("[CONSENTIMIENTOS] token sin aceptaciones pendientes:", String(token).slice(0, 8));
     } catch (error) {
@@ -76,7 +78,7 @@ export default class ConsentimientosController {
 
             const nombre = String(paciente.nombre ?? "").trim().slice(0, 255);
             const apellido = String(paciente.apellido ?? "").trim().slice(0, 255);
-            const tipoDocumento = paciente.tipo_documento === "pasaporte" ? "pasaporte" : "rut";
+            const tipoDocumento = esDocumentoExtranjero(paciente.tipo_documento) ? paciente.tipo_documento : "rut";
             const documento = documentoNormalizado(tipoDocumento, paciente.documento);
             const correo = String(paciente.correo ?? "").trim().slice(0, 255);
             const telefono = String(paciente.telefono ?? "").trim().slice(0, 30) || null;
@@ -188,7 +190,7 @@ export default class ConsentimientosController {
             const id_paciente = Number(req.body?.id_paciente);
             if (!id_paciente) return res.status(400).json({ message: "sindata" });
             const paciente = (await new Pacientes().selectPacienteEspecifico(id_paciente))?.[0];
-            const aceptaciones = await new ConsentimientoAceptacion().listarPorPaciente(id_paciente, limpiarRut(paciente?.rut));
+            const aceptaciones = await new ConsentimientoAceptacion().listarPorPaciente(id_paciente, esDocumentoExtranjero(paciente?.tipo_documento) ? limpiarPasaporte(paciente?.rut) : limpiarRut(paciente?.rut));
             return res.status(200).json({ message: true, aceptaciones });
         } catch (error) {
             console.error("[CONSENTIMIENTOS] listarPorPaciente:", error.message);

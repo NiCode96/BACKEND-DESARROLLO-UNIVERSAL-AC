@@ -8,6 +8,7 @@ import MercadoPersistence from "../model/MercadoPersisntence.js"
 import Profesionales from "../model/Profesionales.js";
 import { vincularAceptacionConReserva } from "./ConsentimientosController.js";
 import { leerCamposOpcionalesReserva, CODIGO_PREVISION_INVALIDA } from "../services/camposReserva.js";
+import { leerDocumentoPaciente, mensajeErrorDocumento } from "../services/documentoPaciente.js";
 
 dotenv.config();
 
@@ -95,6 +96,14 @@ export const createOrder = async (req, res) => {
             return res.status(400).json({ message });
         }
 
+        // RUT, pasaporte o DNI: también antes de crear la orden en Mercado Pago.
+        let documento;
+        try {
+            documento = leerDocumentoPaciente(req.body);
+        } catch (errorDocumento) {
+            return res.status(400).json({ message: mensajeErrorDocumento(errorDocumento) || 'documento-invalido' });
+        }
+
         const ACCESS_TOKEN = accessToken;
 
         if (!ACCESS_TOKEN) {
@@ -170,7 +179,7 @@ export const createOrder = async (req, res) => {
             const resultadoInsert = await reservaPacienteClass.insertarReservaPacienteBackend(
                 nombrePaciente,
                 apellidoPaciente,
-                rut,
+                documento.rut,
                 numeroNormalizado,
                 correoNormalizado,
                 fechaInicio,
@@ -184,13 +193,14 @@ export const createOrder = async (req, res) => {
                 estadoPeticion,
                 id_profesional,
                 camposOpcionales.prevision,
-                camposOpcionales.comentario
+                camposOpcionales.comentario,
+                documento.tipo_documento
             );
 
             if (resultadoInsert && resultadoInsert.affectedRows > 0) {
                 // Une la aceptación de la política de privacidad con la reserva pendiente de pago.
                 // Nunca lanza: si el token no existe o ya se usó, se registra y la reserva sigue.
-                await vincularAceptacionConReserva(token_aceptacion, resultadoInsert.insertId, rut);
+                await vincularAceptacionConReserva(token_aceptacion, resultadoInsert.insertId, documento.rut);
 
                //PRIMERA ACCION ENVIAR AL CLIENTE EL ENLACE DE PAGO GENERADO DESDE MERCADO PAGO
                 console.log('Reserva insertada con estado "reservado" con estado 3 (VISIBLE TEMPORALMENTE), preference_id:', preference_id);

@@ -14,8 +14,14 @@ import {
     CODIGO_PREVISION_INVALIDA,
     CODIGO_COMENTARIO_INVALIDO,
 } from "../services/camposReserva.js";
+import { leerDocumentoPaciente, mensajeErrorDocumento } from "../services/documentoPaciente.js";
 
 function responderErrorReserva(res, error) {
+    const errorDocumento = mensajeErrorDocumento(error);
+    if (errorDocumento) {
+        return res.status(400).send({message: errorDocumento});
+    }
+
     if (error?.code === CODIGO_PREVISION_INVALIDA) {
         return res.status(400).send({message: "prevision-invalida"});
     }
@@ -227,9 +233,11 @@ export default class ReservaPacienteController {
 
             // Ausentes = null = se conserva lo guardado (clientes que no envían estos campos).
             const {prevision, comentario} = leerCamposOpcionalesReserva(req.body, {esActualizacion: true});
+            // Tipo ausente = null = se conserva el guardado; pasaporte/DNI se validan y limpian.
+            const documento = leerDocumentoPaciente(req.body, {esActualizacion: true});
 
             const claseReservaPaciente = new ReservaPacientes();
-            const resultadoQuery = await claseReservaPaciente.actualizarReserva(nombrePaciente, apellidoPaciente, rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion,monto_reserva, motivo_reserva, estadoReserva, id_profesional, id_reserva, prevision, comentario);
+            const resultadoQuery = await claseReservaPaciente.actualizarReserva(nombrePaciente, apellidoPaciente, documento.rut, telefono, email, fechaInicio, horaInicio, fechaFinalizacion, horaFinalizacion,monto_reserva, motivo_reserva, estadoReserva, id_profesional, id_reserva, prevision, comentario, documento.tipo_documento);
 
             if (resultadoQuery.affectedRows > 0) {
                 const correoNormalizado = email && String(email).trim() ? String(email).trim() : null;
@@ -415,12 +423,14 @@ export default class ReservaPacienteController {
 
             // Opcionales: vacíos o ausentes quedan como 'No indicado'.
             const {prevision, comentario} = leerCamposOpcionalesReserva(req.body);
+            // RUT, pasaporte o DNI: el tipo queda guardado con la reserva.
+            const documento = leerDocumentoPaciente(req.body);
 
             const claseReservaPaciente = new ReservaPacientes();
             const resultadoQuery = await claseReservaPaciente.insertarReservaPaciente(
                 nombrePaciente,
                 apellidoPaciente,
-                rut,
+                documento.rut,
                 telefono,
                 correoNormalizado,
                 fechaInicio,
@@ -432,12 +442,13 @@ export default class ReservaPacienteController {
                 estadoReserva,
                 id_profesional,
                 prevision,
-                comentario)
+                comentario,
+                documento.tipo_documento)
 
             if (resultadoQuery.affectedRows > 0) {
                 // Une la aceptación de la política de privacidad (registrada antes por la página
                 // pública) con esta reserva y el paciente. Nunca lanza: la reserva no se pierde.
-                await vincularAceptacionConReserva(token_aceptacion, resultadoQuery.insertId, rut);
+                await vincularAceptacionConReserva(token_aceptacion, resultadoQuery.insertId, documento.rut);
 
                 if (correoNormalizado) {
                     try {
@@ -713,12 +724,14 @@ export default class ReservaPacienteController {
 
             // Opcionales: vacíos o ausentes quedan como 'No indicado'.
             const {prevision, comentario} = leerCamposOpcionalesReserva(req.body);
+            // RUT, pasaporte o DNI: el tipo queda guardado con la reserva.
+            const documento = leerDocumentoPaciente(req.body);
 
             const claseReservaPaciente = new ReservaPacientes();
             const resultadoQuery = await claseReservaPaciente.insertarReservaPaciente(
                 nombrePaciente,
                 apellidoPaciente,
-                rut,
+                documento.rut,
                 telefono,
                 correoNormalizado,
                 fechaInicio,
@@ -730,7 +743,8 @@ export default class ReservaPacienteController {
                 estadoReserva,
                 id_profesional,
                 prevision,
-                comentario)
+                comentario,
+                documento.tipo_documento)
 
             if (resultadoQuery.affectedRows > 0) {
                 NotificacionAgendamiento.enviarCorreoConfirmacionEquipo({

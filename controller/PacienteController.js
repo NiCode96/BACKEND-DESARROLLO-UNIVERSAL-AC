@@ -1,3 +1,4 @@
+import { leerDocumentoPaciente, mensajeErrorDocumento } from "../services/documentoPaciente.js";
 import Paciente from "../model/Pacientes.js";
 
 
@@ -149,8 +150,15 @@ export default class PacienteController {
             if (!nombre || !apellido || !rut || !nacimiento || !sexo || !prevision_id || !telefono || !direccion || !pais) {
                 return res.status(400).json({message : 'Faltan datos obligatorios en el body'})
             }
+            // RUT, pasaporte o DNI (services/documentoPaciente.js): un tipo o documento inválido se rechaza.
+            let documento;
+            try {
+                documento = leerDocumentoPaciente(req.body);
+            } catch (errorDocumento) {
+                return res.status(400).json({message: mensajeErrorDocumento(errorDocumento) || 'documento-invalido'});
+            }
             const paciente = new Paciente();
-            const resultado = await paciente.insertPaciente(nombre,apellido,rut,nacimiento,sexo,prevision_id,telefono,correo,direccion,pais,observacion1,observacion2,observacion3,apoderado,apoderado_rut,medicamentosUsados,habitos,comentariosAdicionales);
+            const resultado = await paciente.insertPaciente(nombre,apellido,documento.rut,nacimiento,sexo,prevision_id,telefono,correo,direccion,pais,observacion1,observacion2,observacion3,apoderado,apoderado_rut,medicamentosUsados,habitos,comentariosAdicionales,documento.tipo_documento);
 
             if(resultado.duplicado === true) {
                 return res.status(200).json({message : 'duplicado'})
@@ -195,8 +203,15 @@ export default class PacienteController {
             if (!nombre || !apellido || !rut || !nacimiento || !sexo || !prevision_id || !telefono || !direccion || !pais || !id_paciente) {
                 return res.status(400).json({message : 'sindato'})
             }
+            // Tipo ausente = se conserva el guardado; pasaporte/DNI se validan y limpian.
+            let documento;
+            try {
+                documento = leerDocumentoPaciente(req.body, {esActualizacion: true});
+            } catch (errorDocumento) {
+                return res.status(400).json({message: mensajeErrorDocumento(errorDocumento) || 'documento-invalido'});
+            }
             const paciente = new Paciente();
-            const resultado = await paciente.updatePaciente(nombre,apellido,rut,nacimiento,sexo,prevision_id,telefono,correo,direccion,pais,observacion1,observacion2,observacion3,apoderado,apoderado_rut,medicamentosUsados,habitos,comentariosAdicionales,id_paciente);
+            const resultado = await paciente.updatePaciente(nombre,apellido,documento.rut,nacimiento,sexo,prevision_id,telefono,correo,direccion,pais,observacion1,observacion2,observacion3,apoderado,apoderado_rut,medicamentosUsados,habitos,comentariosAdicionales,id_paciente,documento.tipo_documento);
             if (resultado?.duplicado === true) {
                 return res.status(200).json({message : 'duplicado'})
             }
