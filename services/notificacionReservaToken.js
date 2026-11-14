@@ -1,9 +1,14 @@
 import crypto from "crypto";
 
-const TOKEN_FALLBACK_SECRET = "agenda-clinica-token-dev";
-
-function obtenerSecret() {
-    return process.env.NOTIFICACION_TOKEN_SECRET || process.env.TWILIO_AUTH_TOKEN || TOKEN_FALLBACK_SECRET;
+// Claves de los enlaces de confirmar/cancelar cita. Se FIRMA con NOTIFICACION_TOKEN_SECRET,
+// propia de cada instancia (scripts/revisar_env.mjs la exige). Se ACEPTA además lo firmado
+// con TWILIO_AUTH_TOKEN, que era la clave de hecho cuando faltaba la propia: así los enlaces
+// ya enviados siguen sirviendo al configurar NOTIFICACION_TOKEN_SECRET. Antes del 14-11 había
+// también una clave fija escrita aquí: con el repo a la vista se podían fabricar enlaces de
+// cancelar para cualquier reserva. Sin clave no se generan enlaces (nunca se firma con algo
+// público).
+function clavesVigentes() {
+    return [...new Set([process.env.NOTIFICACION_TOKEN_SECRET, process.env.TWILIO_AUTH_TOKEN].filter(Boolean))];
 }
 
 function base64UrlEncode(valor) {
@@ -14,12 +19,15 @@ function base64UrlDecode(valor) {
     return Buffer.from(valor, "base64url").toString("utf8");
 }
 
-function firmarPayload(payloadCodificado) {
+function firmarPayload(payloadCodificado, secret) {
     return crypto
-        .createHmac("sha256", obtenerSecret())
+        .createHmac("sha256", secret)
         .update(payloadCodificado)
-        .digest("base64url");
+        .digest("base64url")
+        .slice(0, 22);
 }
+
+const firmasIguales = (a, b) => a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
 export function generarTokenReserva({
     id_reserva,
@@ -29,8 +37,12 @@ export function generarTokenReserva({
     }
 
     const idCodificado = Number(id_reserva).toString(36);
-    const firma = firmarPayload(idCodificado).slice(0, 22);
-    return `${idCodificado}.${firma}`;
+    const [clave] = clavesVigentes();
+    if (!clave) {
+        console.error("[RESERVA] sin NOTIFICACION_TOKEN_SECRET: el aviso sale sin enlaces de confirmar/cancelar");
+        return null;
+    }
+    return `${idCodificado}.${firmarPayload(idCodificado, clave)}`;
 }
 
 export function verificarTokenReserva(token) {
@@ -43,8 +55,7 @@ export function verificarTokenReserva(token) {
         return null;
     }
 
-    const firmaEsperada = firmarPayload(payloadCodificado).slice(0, 22);
-    if (firma !== firmaEsperada) {
+    if (!clavesVigentes().some((clave) => firmasIguales(firma, firmarPayload(payloadCodificado, clave)))) {
         return null;
     }
 
@@ -75,7 +86,12 @@ export function construirEnlacesReservaToken({
         return { token: null, urlConfirmar: null, urlCancelar: null };
     }
 
-    const baseUrl = process.env.BACKEND_URL || "https://siluetachic.nativecode.cl";
+    // Sin BACKEND_URL no hay enlaces: antes caía a la URL de otro cliente.
+    const baseUrl = String(process.env.BACKEND_URL || "").trim().replace(/\/$/, "");
+    if (!baseUrl) {
+        console.error("[RESERVA] sin BACKEND_URL: el aviso sale sin enlaces de confirmar/cancelar");
+        return { token: null, urlConfirmar: null, urlCancelar: null };
+    }
     return {
         token,
         urlConfirmar: `${baseUrl}/notificacion/confirmar/${token}`,

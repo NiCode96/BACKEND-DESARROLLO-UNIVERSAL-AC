@@ -22,7 +22,7 @@ let proceso, salida = "";
 before(async () => {
     // app.js real, como en el servidor (sin NODE_ENV=production).
     proceso = spawn(process.execPath, ["app.js"], {
-        cwd: RAIZ, env: { ...process.env, PORT: String(PUERTO), NODE_ENV: "", CLERK_SECRET_KEY: "sk_test_falsa" }, stdio: ["ignore", "pipe", "pipe"],
+        cwd: RAIZ, env: { ...process.env, PORT: String(PUERTO), NODE_ENV: "", CLERK_SECRET_KEY: "sk_test_falsa", CORS_ORIGENES: "https://front.prueba.cl, http://localhost:3000/" }, stdio: ["ignore", "pipe", "pipe"],
     });
     proceso.stdout.on("data", (d) => { salida += d; });
     proceso.stderr.on("data", (d) => { salida += d; });
@@ -51,6 +51,18 @@ test("cuerpo demasiado grande: 413 en JSON", async () => {
 test("no anuncia X-Powered-By", async () => {
     const r = await fetch(url("/consentimientos/seleccionarVigentes"));
     assert.equal(r.headers.get("x-powered-by"), null);
+});
+
+test("CORS: solo los orígenes de CORS_ORIGENES; sin Origin (servidor a servidor) pasa", async () => {
+    const ruta = url("/consentimientos/seleccionarVigentes");
+    const origen = async (o) => (await fetch(ruta, o ? { headers: { Origin: o } } : {})).headers.get("access-control-allow-origin");
+    assert.equal(await origen("https://front.prueba.cl"), "https://front.prueba.cl");
+    assert.equal(await origen("http://localhost:3000"), "http://localhost:3000");
+    assert.equal(await origen("https://atacante.com"), null);
+    assert.equal(await origen("https://front.prueba.cl.atacante.com"), null);
+    const sinOrigen = await fetch(ruta);
+    assert.equal(sinOrigen.status, 200);
+    assert.equal(sinOrigen.headers.get("access-control-allow-credentials"), null);
 });
 
 test("el proceso sigue vivo después de los errores", async () => {

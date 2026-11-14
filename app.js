@@ -84,9 +84,20 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 
+// CORS: solo el front de ESTA instancia puede llamar al backend desde un navegador.
+// CORS_ORIGENES = orígenes exactos separados por coma, p. ej.
+//   https://desarrollo.agendaclinicas.cl,http://localhost:3000
+// Si falta, se usa URL_PUBLICA_SITIO. Antes del 14-11 se aceptaba cualquier origen.
+// Una petición sin Origin (servidor a servidor: Mercado Pago, Twilio, cron, curl) pasa
+// igual: CORS lo aplica el navegador, no reemplaza la sesión (Authorization: Bearer).
+// Sin cookies: la sesión nunca viaja en cookies, así que no hace falta credentials.
+const origenesPermitidos = new Set(
+    String(process.env.CORS_ORIGENES || process.env.URL_PUBLICA_SITIO || "")
+        .split(",").map((o) => o.trim().replace(/\/$/, "")).filter(Boolean)
+);
+if (!origenesPermitidos.size) console.error("[CORS] sin CORS_ORIGENES ni URL_PUBLICA_SITIO: ningún navegador podrá llamar al backend");
 const corsConfig = {
-    origin: true,
-    credentials: true,
+    origin: (origen, listo) => listo(null, !origen || origenesPermitidos.has(origen)),
     methods: ['GET','POST','PUT','DELETE','OPTIONS'],
     allowedHeaders: ['Content-Type','Authorization']
 };

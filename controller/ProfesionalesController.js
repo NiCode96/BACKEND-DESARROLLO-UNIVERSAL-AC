@@ -3,6 +3,12 @@ import { CODIGO_CATEGORIA_INVALIDA, SIN_CAMBIO, normalizarCategoriaProfesional }
 // FIRMA: validación de RUT, foto y N° de registro de la Superintendencia de Salud.
 import { rutValido } from "../services/firma/rut.js";
 import { declararRegistroSis } from "./RegistroSisController.js";
+import { CAMPOS_PUBLICOS, soloCampos } from "../services/camposPublicos.js";
+
+// Sin sesión (sitio público) solo salen CAMPOS_PUBLICOS.profesional; con sesión del
+// personal (req.sesionClerk, de sesionSiLaHay) todo. Los usos internos del modelo
+// (autor de la ficha, correos) siguen leyendo todas las columnas.
+const segunQuienPregunta = (req, filas) => (req.sesionClerk ? filas : soloCampos(filas, CAMPOS_PUBLICOS.profesional));
 
 // Categoría: undefined = no vino (se conserva al editar); lanza CATEGORIA_INVALIDA si no sirve
 function leerCategoria(body) {
@@ -166,7 +172,7 @@ export default class ProfesionalesController {
             const resultado = await profesionalClass.seleccionarProfesionalPorID(id_profesional);
 
             if (resultado) {
-                res.status(200).json(resultado);
+                res.status(200).json(segunQuienPregunta(req, resultado));
             }else {
                 res.status(500).json({ message: false });
             }
@@ -204,7 +210,7 @@ export default class ProfesionalesController {
             const resultado = await profesionalClass.seleccionarProfesionales();
 
             if (resultado) {
-                res.status(200).json(resultado);
+                res.status(200).json(segunQuienPregunta(req, resultado));
             } else {
                 res.status(500).json({message: false});
             }

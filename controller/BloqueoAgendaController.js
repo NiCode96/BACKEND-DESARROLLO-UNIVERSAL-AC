@@ -1,4 +1,5 @@
 import BloqueoAgenda from "../model/BloqueoAgenda.js";
+import { CAMPOS_PUBLICOS, soloCampos } from "../services/camposPublicos.js";
 
 export default class BloqueoAgendaController {
     constructor(){
@@ -63,7 +64,8 @@ export default class BloqueoAgendaController {
             const respuestaModel = await BloqueoAgendaClass.seleccionarBloqueoPorProfesionalModel(id_profesional);
 
             if(respuestaModel){
-                return res.status(200).send(respuestaModel);
+                // Sin sesión (agenda pública): solo cuándo está ocupado, sin el motivo.
+                return res.status(200).send(req.sesionClerk ? respuestaModel : soloCampos(respuestaModel, CAMPOS_PUBLICOS.bloqueo));
             }
         }catch(err){
             return res.status(400).send({message : "serverError"});

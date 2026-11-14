@@ -57,6 +57,12 @@ export const esProfesional = (usuario) => PERFILES_PROFESIONALES.has(perfil(usua
 
 export const esRecepcion = (usuario) => perfil(usuario?.rol).base === ROL_RECEPCION;
 
+/** Perfiles que pueden usar el backend con sesión. Cualquier otro (vacío, desconocido,
+ *  "suspendido", "sin-acceso", o una cuenta creada por el registro público de Clerk sin
+ *  perfil asignado) recibe 403. Es la misma lista de perfiles con dashboard del front. */
+export const tieneAccesoPlataforma = (usuario) =>
+    esAdministrador(usuario) || esProfesional(usuario) || esRecepcion(usuario);
+
 /** Roles que trabajan con fichas clínicas: administradores y profesionales (no recepción). */
 export const esRolClinico = (usuario) => esAdministrador(usuario) || esProfesional(usuario);
 

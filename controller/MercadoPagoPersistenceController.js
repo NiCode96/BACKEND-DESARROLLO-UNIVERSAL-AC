@@ -1,4 +1,6 @@
 import MercadoPersistence from "../model/MercadoPersisntence.js";
+import { CAMPOS_PUBLICOS, soloCampos } from "../services/camposPublicos.js";
+import { esTecnico } from "../services/firma/roles.js";
 
 export default class MercadoPagoPersistenceController {
     constructor() {
@@ -123,7 +125,10 @@ export default class MercadoPagoPersistenceController {
             const respuestaModel = await mercadoPagoPersistence.seleccionarMercadoPagoPersistence();
 
             if(Array.isArray(respuestaModel) && respuestaModel.length > 0){
-                res.status(200).json(respuestaModel);
+                // La fila guarda el access_token de Mercado Pago: solo lo ve el técnico
+                // (pantalla Pasarela de pago). El sitio público y el resto del personal
+                // reciben solo si la clínica cobra con Mercado Pago.
+                res.status(200).json(esTecnico(req.usuario) ? respuestaModel : soloCampos(respuestaModel, CAMPOS_PUBLICOS.pasarela));
 
             }else {
                 return res.status(200).send({

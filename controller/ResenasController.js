@@ -1,4 +1,5 @@
 import Resenas from '../model/Resenas.js';
+import { CAMPOS_PUBLICOS, soloCampos } from '../services/camposPublicos.js';
 
 const COMENTARIO_MAX_LARGO = 1000;
 const NOMBRE_MAX_LARGO = 100;
@@ -94,7 +95,8 @@ export default class ResenasController {
             const resenaClass = new Resenas();
             const resultado = await resenaClass.seleccionarPorProfesional(profesional_id);
 
-            res.status(200).json(resultado);
+            // Sin sesión (sitio público): sin paciente_id ni datos internos.
+            res.status(200).json(req.sesionClerk ? resultado : soloCampos(resultado, CAMPOS_PUBLICOS.resena));
         } catch (error) {
             res.status(500).json({ message: "serverError" });
         }

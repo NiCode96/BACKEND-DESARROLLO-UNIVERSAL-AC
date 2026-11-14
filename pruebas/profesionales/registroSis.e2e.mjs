@@ -130,22 +130,36 @@ test("crear: guarda foto, categoría y N° de registro declarado con su evento",
     assert.equal(await eventos("registro_sis_declarado"), 1);
 });
 
-test("listado público y por id: traen categoría, foto, registro y firma_estado, y nunca las columnas internas", async () => {
-    const r = await fetch(`${base}/profesionales/seleccionarTodosProfesionales`);
-    assert.equal(r.status, 200);
-    const lista = await r.json();
+test("listado sin sesión (sitio público): solo nombre, descripción, categoría y foto", async () => {
+    const lista = await (await fetch(`${base}/profesionales/seleccionarTodosProfesionales`)).json();
     const p = lista.find((x) => x.id_profesional === idNuevo);
     assert.ok(p, "el profesional nuevo aparece");
     assert.equal(p.categoriaProfesional, "Psicología");
     assert.equal(p.imagenProfesional, "foto-abc-123");
+    const PUBLICAS = ["id_profesional", "nombreProfesional", "descripcionProfesional", "categoriaProfesional", "imagenProfesional"];
+    for (const x of lista) assert.deepEqual(Object.keys(x).sort(), [...PUBLICAS].sort());
+
+    const porId = await (await fetch(`${base}/profesionales/seleccionarProfesional`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id_profesional: idNuevo }) })).json();
+    assert.deepEqual(Object.keys(porId[0]).sort(), [...PUBLICAS].sort());
+});
+
+test("listado con sesión (dashboard): trae registro y firma_estado, y nunca las columnas internas", async () => {
+    // sesionSiLaHay solo valida la sesión si viene Authorization (el mock decide el usuario por X-Prueba-Usuario).
+    const conSesion = { "Content-Type": "application/json", Authorization: "Bearer prueba", "X-Prueba-Usuario": "admin" };
+    const r = await fetch(`${base}/profesionales/seleccionarTodosProfesionales`, { headers: conSesion });
+    assert.equal(r.status, 200);
+    const lista = await r.json();
+    const p = lista.find((x) => x.id_profesional === idNuevo);
+    assert.equal(p.categoriaProfesional, "Psicología");
     assert.equal(p.registro_sis_numero, "123456");
     assert.equal(p.registro_sis_estado, "declarado");
     assert.equal(p.firma_estado, "ninguna");
     for (const x of lista) for (const c of INTERNAS) assert.equal(c in x, false, `${c} no debe salir en el listado`);
 
     const porId = await (await fetch(`${base}/profesionales/seleccionarProfesional`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id_profesional: idNuevo }) })).json();
-    assert.equal(porId[0].categoriaProfesional, "Psicología");
+        method: "POST", headers: conSesion, body: JSON.stringify({ id_profesional: idNuevo }) })).json();
+    assert.equal(porId[0].registro_sis_numero, "123456");
     for (const c of INTERNAS) assert.equal(c in porId[0], false, `${c} no debe salir por id`);
 });
 

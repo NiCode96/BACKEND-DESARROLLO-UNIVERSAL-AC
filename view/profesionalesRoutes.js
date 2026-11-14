@@ -1,6 +1,7 @@
 import {Router} from 'express';
 import ProfesionalesController from '../controller/ProfesionalesController.js';
 import { exigirSesionClerk } from "../middleware/exigirSesionClerk.js";
+import { sesionSiLaHay } from "../middleware/sesionSiLaHay.js";
 // FIRMA: registro de la Superintendencia de Salud y sesión de Clerk.
 import RegistroSisController from '../controller/RegistroSisController.js';
 import { verificarUsuarioClerk } from '../middleware/verificarUsuarioClerk.js';
@@ -13,9 +14,12 @@ import { subirCertificado, manejarErrorArchivo } from '../middleware/limitesArch
 const router = Router();
 
 // PÚBLICAS: la agenda y el formulario de reserva del sitio anónimo leen los
-// profesionales sin sesión Clerk.
-router.post('/seleccionarProfesional', ProfesionalesController.seleccionarProfesionalController);
-router.get('/seleccionarTodosProfesionales', ProfesionalesController.seleccionarTodosLosProfesionales);
+// profesionales sin sesión Clerk. Sin Authorization responden SOLO los campos del
+// sitio público (nombre, descripción, categoría, foto). Con Authorization (el
+// dashboard) la sesión se valida igual que en el resto del grupo —token y perfil—
+// y la respuesta trae todo; un token inválido da 401, nunca los datos.
+router.post('/seleccionarProfesional', sesionSiLaHay, ProfesionalesController.seleccionarProfesionalController);
+router.get('/seleccionarTodosProfesionales', sesionSiLaHay, ProfesionalesController.seleccionarTodosLosProfesionales);
 
 // El resto del grupo exige sesión. El orden importa: solo lo declarado
 // DESPUÉS de este use() pasa por el gate.

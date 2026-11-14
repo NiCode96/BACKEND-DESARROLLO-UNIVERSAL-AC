@@ -134,11 +134,12 @@ function construirHtmlCorreoPaciente({
       <p style="margin: 0 0 6px 0; font-size: 15px; color: ${TEXTO_SECUNDARIO};">${saludo}</p>
       <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.7; color: ${TEXTO_PRINCIPAL};">${nombrePaciente}, ${ctaTexto}</p>
       ${tabla}
+      ${urlConfirmar && urlCancelar ? `
       <div style="margin-top: 24px;">
         <p style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: ${TEXTO_PRINCIPAL};">${ctaTitulo}</p>
         ${construirBoton({ href: urlConfirmar, texto: "Confirmar asistencia" })}
         ${construirBoton({ href: urlCancelar, texto: "Cancelar cita", color: TEXTO_SECUNDARIO })}
-      </div>
+      </div>` : ""}
       ${codigoPrivacidad ? `
       <p style="margin: 22px 0 0 0; font-size: 13px; line-height: 1.6; color: ${TEXTO_SECUNDARIO};">
         Tu aceptación de la política de privacidad quedó registrada con el código

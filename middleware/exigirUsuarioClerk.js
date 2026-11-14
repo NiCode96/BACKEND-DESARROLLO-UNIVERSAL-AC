@@ -1,5 +1,5 @@
-import { verifyToken, createClerkClient } from "@clerk/backend";
-import UsuarioPlataforma from "../model/UsuarioPlataforma.js";
+import { verifyToken } from "@clerk/backend";
+import { conTiempoLimite, resolverUsuario } from "../services/usuarioClerk.js";
 
 /* Sesión de Clerk OBLIGATORIA (falla cerrado). Para las rutas de firma,
  * documentos y consentimientos del dashboard.
@@ -11,45 +11,9 @@ import UsuarioPlataforma from "../model/UsuarioPlataforma.js";
  *   req.usuario  = { clerkId, sesionId, fva, email, nombre, rol, idProfesional, idUsuario }
  *   req.contexto = { ip, userAgent }
  *
- * Caché de 60 s por usuario para no consultar a Clerk en cada petición. La
- * reverificación (fva) se lee siempre del token, nunca de la caché. */
-
-let clerk = null;
-function obtenerClerk() {
-    if (!clerk && process.env.CLERK_SECRET_KEY) clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
-    return clerk;
-}
-
-// Si Clerk no responde, la petición termina con 503 en vez de quedar colgada (y ocupando memoria).
-const TIEMPO_LIMITE_CLERK_MS = Number(process.env.CLERK_TIEMPO_LIMITE_MS || 8000);
-function conTiempoLimite(promesa, contexto) {
-    let temporizador;
-    const limite = new Promise((_, rechazar) => {
-        temporizador = setTimeout(() => rechazar(Object.assign(new Error(`Clerk no respondió (${contexto})`), { tiempoLimite: true })), TIEMPO_LIMITE_CLERK_MS);
-    });
-    return Promise.race([promesa, limite]).finally(() => clearTimeout(temporizador));
-}
-
-const cache = new Map(); // clerkId → { usuario, vence }
-const DURACION_CACHE_MS = 60_000;
-
-async function resolverUsuario(clerkId) {
-    const guardado = cache.get(clerkId);
-    if (guardado && guardado.vence > Date.now()) return guardado.usuario;
-
-    const u = await conTiempoLimite(obtenerClerk().users.getUser(clerkId), "getUser");
-    const meta = u.publicMetadata || {};
-    const usuario = {
-        email: u.primaryEmailAddress?.emailAddress || u.emailAddresses?.[0]?.emailAddress || null,
-        nombre: [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.username || null,
-        rol: meta.role || meta.rol || null,
-        idProfesional: Number(meta.idProfesionalAgenda) || null,
-    };
-    usuario.idUsuario = await new UsuarioPlataforma().asegurar({ clerkId, ...usuario });
-    cache.set(clerkId, { usuario, vence: Date.now() + DURACION_CACHE_MS });
-    if (cache.size > 1000) cache.delete(cache.keys().next().value);
-    return usuario;
-}
+ * Sin un perfil de la plataforma (ver tieneAccesoPlataforma), 403.
+ * Caché de 60 s por usuario (services/usuarioClerk.js). La reverificación (fva)
+ * se lee siempre del token, nunca de la caché. */
 
 export const exigirUsuarioClerk = async (req, res, next) => {
     const cabecera = req.headers.authorization || "";
@@ -70,6 +34,7 @@ export const exigirUsuarioClerk = async (req, res, next) => {
         // FIRMA_DEPURAR_FVA=1 en el .env. Solo imprime los dos números, nunca datos del usuario.
         if (process.env.FIRMA_DEPURAR_FVA === "1") console.log("[CLERK] fva del token:", JSON.stringify(datos.fva ?? null));
         const usuario = await resolverUsuario(datos.sub);
+        if (!usuario.conAcceso) return res.status(403).json({ message: "sinPermiso" });
         req.usuario = {
             ...usuario,
             clerkId: datos.sub,

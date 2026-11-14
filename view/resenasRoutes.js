@@ -2,6 +2,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import ResenasController from '../controller/ResenasController.js';
 import { exigirSesionClerk } from "../middleware/exigirSesionClerk.js";
+import { sesionSiLaHay } from "../middleware/sesionSiLaHay.js";
 
 const router = Router();
 
@@ -16,7 +17,7 @@ const limitarInsercionResenas = rateLimit({
 
 // PÚBLICAS: el sitio anónimo muestra las reseñas y deja que un paciente deje la suya.
 router.post('/insertarResena', limitarInsercionResenas, ResenasController.insertarResenaController);
-router.post('/seleccionarPorProfesional', ResenasController.seleccionarPorProfesionalController);
+router.post('/seleccionarPorProfesional', sesionSiLaHay, ResenasController.seleccionarPorProfesionalController);
 router.post('/promedioPorProfesional', ResenasController.promedioPorProfesionalController);
 
 // El resto del grupo exige sesión. El orden importa: solo lo declarado
