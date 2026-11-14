@@ -66,6 +66,7 @@ import documentosRoutes from "./view/documentosRoutes.js";
 import { revisarVencimientos } from "./services/firma/vencimientoDocumentos.js";
 import telemedicinaRoutes from "./view/telemedicinaRoutes.js";
 import { exigirSesionClerk } from "./middleware/exigirSesionClerk.js";
+import DataBase from "./config/Database.js";
 
 
 
@@ -213,7 +214,7 @@ process.on("unhandledRejection", (motivo) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+const servidor = app.listen(PORT, () => {
     console.log(`BACKEND CORRIENDO SIN PROBLEMAS EN --->  http://localhost:${PORT}`);
 
     // CRON JOB: Ejecutar recordatorios automáticos cada 5 minutos
@@ -267,3 +268,27 @@ app.listen(PORT, () => {
         limpiarNotificacionesInappAntiguas();
     }, 30 * 60 * 1000);
 })
+
+// Apagado ordenado. pm2 (restart, stop, --max-memory-restart) manda SIGINT y espera
+// --kill-timeout antes de matar el proceso. En ese margen: no se aceptan conexiones
+// nuevas, se dejan terminar las peticiones en curso (una firma que está escribiendo
+// en la base y en R2) y recién entonces se cierra el pool de MySQL.
+// LIMITE_APAGADO_MS debe quedar bajo el --kill-timeout de pm2 (10 000 ms).
+const LIMITE_APAGADO_MS = 9000;
+let apagando = false;
+function apagar(senal) {
+    if (apagando) return;
+    apagando = true;
+    console.log(`[APP] ${senal}: terminando las peticiones en curso antes de cerrar...`);
+    setTimeout(() => {
+        console.error(`[APP] apagado forzado: quedaban peticiones abiertas tras ${LIMITE_APAGADO_MS} ms`);
+        process.exit(1);
+    }, LIMITE_APAGADO_MS).unref();
+    servidor.close(async () => {
+        await DataBase.getInstance().cerrarConexion();
+        process.exit(0);
+    });
+    servidor.closeIdleConnections();
+}
+process.on("SIGINT", () => apagar("SIGINT"));
+process.on("SIGTERM", () => apagar("SIGTERM"));

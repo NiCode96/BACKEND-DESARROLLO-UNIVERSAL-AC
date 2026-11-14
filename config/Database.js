@@ -57,7 +57,8 @@ if (!global.__db_shutdown_hook) {
             }
         } catch (_) { /* noop */ }
     };
-    process.on('SIGINT', () => { closePool(); process.exit(0); });
-    process.on('SIGTERM', () => { closePool(); process.exit(0); });
+    // SIGINT/SIGTERM no se atienden aquí: app.js espera a que terminen las peticiones
+    // en curso antes de cerrar el pool. Un process.exit inmediato en este punto cortaría
+    // a la mitad una firma durante un reinicio de pm2.
     process.on('beforeExit', () => { closePool(); });
 }

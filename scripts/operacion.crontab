@@ -1,0 +1,19 @@
+# Tareas programadas del backend (Fase 8 de docs/firma/04). Una copia por instancia.
+#
+# Instalar (agrega estas líneas al crontab actual sin borrar las de otros proyectos):
+#   cd /ruta/del/backend && mkdir -p logs
+#   (crontab -l 2>/dev/null; sed "s|/ruta/del/backend|$PWD|g" scripts/operacion.crontab) | crontab -
+#
+# Requiere en el .env: ALERTA_CORREO, BREVO_API_KEY, CORREO_REMITENTE, DB_*, R2_*, FIRMA_HMAC_CLAVE.
+# Horas en la zona del servidor (UTC). Chile = UTC−3 en verano, UTC−4 en invierno:
+# 06:00 UTC = 03:00 en verano, 02:00 en invierno.
+# Cada línea: tarea >> log || aviso por correo. El log queda en logs/operacion.log.
+
+# Diario: cadena de evidencia de la firma (huellas y sellos HMAC).
+0 6 * * *  cd /ruta/del/backend && node scripts/verificar_cadena_firma.mjs >> logs/operacion.log 2>&1 || node scripts/avisar_falla.mjs "Verificación diaria de la cadena de firma" >> logs/operacion.log 2>&1
+# Diario: respaldo de la base (local 600 + copia en R2, guarda 30 días).
+30 6 * * * cd /ruta/del/backend && node scripts/respaldo_bd.mjs >> logs/operacion.log 2>&1 || node scripts/avisar_falla.mjs "Respaldo diario de la base" >> logs/operacion.log 2>&1
+# Domingo: además compara cada PDF firmado guardado en R2 con su huella.
+0 7 * * 0  cd /ruta/del/backend && node scripts/verificar_cadena_firma.mjs --con-pdf >> logs/operacion.log 2>&1 || node scripts/avisar_falla.mjs "Verificación semanal de los PDF firmados" >> logs/operacion.log 2>&1
+# Domingo: borra de R2 las subidas a medias (nunca un archivo referenciado ni registro-sis).
+30 7 * * 0 cd /ruta/del/backend && node scripts/limpiar_huerfanos_r2.mjs --borrar >> logs/operacion.log 2>&1 || node scripts/avisar_falla.mjs "Limpieza semanal de huérfanos en R2" >> logs/operacion.log 2>&1
