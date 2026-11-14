@@ -16,9 +16,12 @@ const limitarInsercionResenas = rateLimit({
 });
 
 // PÚBLICAS: el sitio anónimo muestra las reseñas y deja que un paciente deje la suya.
-router.post('/insertarResena', limitarInsercionResenas, ResenasController.insertarResenaController);
+router.post('/insertarResena', limitarInsercionResenas, sesionSiLaHay, ResenasController.insertarResenaController);
 router.post('/seleccionarPorProfesional', sesionSiLaHay, ResenasController.seleccionarPorProfesionalController);
 router.post('/promedioPorProfesional', ResenasController.promedioPorProfesionalController);
+// El inicio del sitio lista las reseñas del centro. Estaba detrás de la sesión desde el
+// 23-10: el visitante recibía 401 y las reseñas recién publicadas "desaparecían".
+router.get('/seleccionarTodas', sesionSiLaHay, ResenasController.seleccionarTodasLasResenas);
 
 // El resto del grupo exige sesión. El orden importa: solo lo declarado
 // DESPUÉS de este use() pasa por el gate.
@@ -26,6 +29,5 @@ router.use(exigirSesionClerk);
 
 router.post('/actualizarResena', ResenasController.actualizarResenaController);
 router.post('/eliminarResena', ResenasController.eliminarResenaController);
-router.get('/seleccionarTodas', ResenasController.seleccionarTodasLasResenas);
 
 export default router;

@@ -122,6 +122,30 @@ test("sin sesión: pasarela solo dice si está activa, nunca el token", async ()
     assert.doesNotMatch(r.texto, new RegExp(TOKEN_FALSO));
 });
 
+test("sin sesión: las reseñas del inicio se ven, con el paciente como \"Nombre I.\"", async () => {
+    const [{ id_paciente, nombre, apellido }] = await db.ejecutarQuery(
+        "SELECT id_paciente, nombre, apellido FROM pacienteDatos WHERE nombre <> '' AND apellido <> '' LIMIT 1");
+    await db.ejecutarQuery("INSERT INTO resenas (rating, comentario, paciente_id, profesional_id, estado) VALUES (4, 'De paciente', ?, ?, 1)", [id_paciente, ID_PROFESIONAL]);
+    const r = await pedir("GET", "/resenas/seleccionarTodas");
+    assert.equal(r.status, 200, "antes daba 401 y el inicio quedaba vacío");
+    soloLlaves(r.texto, CAMPOS_PUBLICOS.resenaCentro);
+    const fila = filas(r.texto).find((f) => f.comentario === "De paciente");
+    assert.equal(fila.nombrePaciente, nombre.trim().split(/\s+/)[0]);
+    assert.equal(fila.apellidoPaciente, `${apellido.trim()[0].toUpperCase()}.`);
+    assert.doesNotMatch(r.texto, /paciente_id/);
+    const conSesion = await pedir("GET", "/resenas/seleccionarTodas", { token: "t:admin" });
+    assert.match(conSesion.texto, new RegExp(`"apellidoPaciente":"${apellido.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`));
+});
+
+test("publicar sin sesión: se guarda, se ve, y paciente_id se ignora", async () => {
+    const r = await pedir("POST", "/resenas/insertarResena", { cuerpo: {
+        rating: 5, comentario: "Publicada sin sesión", profesional_id: ID_PROFESIONAL, paciente_id: 1, nombre_invitado: "Rosa", apellido_invitado: "Díaz" } });
+    assert.ok(r.status < 300, r.texto);
+    const [guardada] = await db.ejecutarQuery("SELECT paciente_id FROM resenas WHERE comentario = 'Publicada sin sesión'");
+    assert.equal(guardada.paciente_id, null);
+    assert.match((await pedir("GET", "/resenas/seleccionarTodas")).texto, /Publicada sin sesión/);
+});
+
 test("con sesión del personal: el dashboard recibe todo", async () => {
     const p = await RUTAS.profesional({ token: "t:recepcion" });
     assert.equal(p.status, 200);

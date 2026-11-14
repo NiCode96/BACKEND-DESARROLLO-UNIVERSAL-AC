@@ -9,6 +9,9 @@ export const CAMPOS_PUBLICOS = {
     bloqueo: ["id_bloqueo", "id_profesional", "fechaInicio", "horaInicio", "fechaFinalizacion", "horaFinalizacion"],
     // Sin paciente_id: diría públicamente quién es paciente de quién.
     resena: ["id_resena", "rating", "comentario", "profesional_id", "created_at", "nombre_invitado", "apellido_invitado"],
+    // Inicio del sitio: lo mismo + a quién va dirigida y el paciente abreviado ("Juan P.").
+    resenaCentro: ["id_resena", "rating", "comentario", "profesional_id", "created_at", "nombre_invitado", "apellido_invitado",
+        "nombrePaciente", "apellidoPaciente", "nombreProfesional"],
     // Solo si la clínica cobra con Mercado Pago. NUNCA el access_token.
     pasarela: ["estado_pasarela"],
 };

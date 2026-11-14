@@ -2,6 +2,14 @@ import Resenas from '../model/Resenas.js';
 import { CAMPOS_PUBLICOS, soloCampos } from '../services/camposPublicos.js';
 
 const COMENTARIO_MAX_LARGO = 1000;
+
+// "Juan Carlos" + "Pérez Soto" → "Juan" + "P.": basta para firmar una opinión pública.
+const primeraPalabra = (texto) => String(texto ?? "").trim().split(/\s+/)[0] || null;
+const nombrePacienteAbreviado = (r) => ({
+    ...r,
+    nombrePaciente: primeraPalabra(r.nombrePaciente),
+    apellidoPaciente: primeraPalabra(r.apellidoPaciente) ? `${primeraPalabra(r.apellidoPaciente)[0].toUpperCase()}.` : null,
+});
 const NOMBRE_MAX_LARGO = 100;
 
 // Valida que un id opcional venga como entero positivo. Devuelve null si no vino,
@@ -45,7 +53,9 @@ export default class ResenasController {
                 return res.status(400).json({ message: "sindata" });
             }
 
-            const paciente_id = normalizarIdOpcional(req.body.paciente_id);
+            // Sin sesión (sitio público) no se acepta paciente_id: con él, cualquiera podía
+            // hacer aparecer en el listado público el nombre de un paciente por su id.
+            const paciente_id = req.sesionClerk ? normalizarIdOpcional(req.body.paciente_id) : null;
             const profesional_id = normalizarIdOpcional(req.body.profesional_id);
             const clinica_id = normalizarIdOpcional(req.body.clinica_id);
 
@@ -167,12 +177,13 @@ export default class ResenasController {
         }
     }
 
-    // FUNCION PARA LISTAR TODAS LAS RESEÑAS (uso interno / dashboard)
+    // Todas las reseñas activas: el dashboard (con sesión) recibe todo; el inicio del sitio
+    // público, solo CAMPOS_PUBLICOS.resenaCentro y el paciente como "Nombre I.".
     static async seleccionarTodasLasResenas(req, res) {
         try {
             const resenaClass = new Resenas();
             const resultado = await resenaClass.seleccionarResenas();
-            res.status(200).json(resultado);
+            res.status(200).json(req.sesionClerk ? resultado : soloCampos(resultado.map(nombrePacienteAbreviado), CAMPOS_PUBLICOS.resenaCentro));
         } catch (error) {
             res.status(500).json({ message: "serverError" });
         }
