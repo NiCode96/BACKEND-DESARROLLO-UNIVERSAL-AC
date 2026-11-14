@@ -10,7 +10,7 @@ import { construirCorreoBase, construirTablaDetalle, construirBoton, TEXTO_PRINC
 
 const TIEMPO_LIMITE_MS = 10000;
 
-const escapar = (texto) => String(texto ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[c]);
+export const escapar = (texto) => String(texto ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[c]);
 
 /**
  * @param {object} p
@@ -49,8 +49,8 @@ export async function enviarCorreo({ empresa, para, nombre, asunto, html, adjunt
     return true;
 }
 
-const parrafo = (texto) => `<p style="margin:0 0 16px 0; font-size:15px; line-height:1.7; color:${TEXTO_PRINCIPAL};">${texto}</p>`;
-const nota = (texto) => `<p style="margin:16px 0 0 0; font-size:13px; line-height:1.6; color:${TEXTO_SECUNDARIO};">${texto}</p>`;
+export const parrafo = (texto) => `<p style="margin:0 0 16px 0; font-size:15px; line-height:1.7; color:${TEXTO_PRINCIPAL};">${texto}</p>`;
+export const nota = (texto) => `<p style="margin:16px 0 0 0; font-size:13px; line-height:1.6; color:${TEXTO_SECUNDARIO};">${texto}</p>`;
 
 /** Documento firmado electrónicamente (cotización, presupuesto, orden, ficha, consentimiento). */
 export function htmlDocumentoFirmado({ empresa, nombrePaciente, tipoLegible, profesional, codigo, urlVerificacion }) {

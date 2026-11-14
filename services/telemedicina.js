@@ -41,23 +41,29 @@ export default class TelemedicinaService {
         return `${payload}.${obtenerFirmaInvitacion(payload)}`;
     }
 
-    validarInvitacion(nombreSala, invitacion) {
+    /** Datos firmados de una invitación vigente de esa sala ({ nombreSala, nombreProfesional,
+     *  expira }), o null si la firma no cuadra, es de otra sala o ya venció. */
+    datosInvitacion(nombreSala, invitacion) {
         try {
-            if (typeof invitacion !== "string") return false;
+            if (typeof invitacion !== "string") return null;
             const [payload, firma] = invitacion.split(".");
-            if (!payload || !firma) return false;
+            if (!payload || !firma) return null;
 
             const firmaEsperada = Buffer.from(obtenerFirmaInvitacion(payload), "base64url");
             const firmaRecibida = Buffer.from(firma, "base64url");
             if (firmaEsperada.length !== firmaRecibida.length || !timingSafeEqual(firmaEsperada, firmaRecibida)) {
-                return false;
+                return null;
             }
 
             const datos = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-            return datos.nombreSala === nombreSala && Number(datos.expira) > Date.now();
+            return datos.nombreSala === nombreSala && Number(datos.expira) > Date.now() ? datos : null;
         } catch {
-            return false;
+            return null;
         }
+    }
+
+    validarInvitacion(nombreSala, invitacion) {
+        return this.datosInvitacion(nombreSala, invitacion) !== null;
     }
 
     generarToken(identity, nombreSala) {
