@@ -23,7 +23,7 @@ export function htmlInvitacionVideollamada({ empresa, nombrePaciente, nombreProf
         contenidoHtml: `
             ${parrafo(`${quien} te invita a tu videoconsulta${empresa?.empresaNombre ? ` en ${escapar(empresa.empresaNombre)}` : ""}.`)}
             <div style="margin-top:8px;">${construirBoton({ href: enlace, texto: "Entrar a la videoconsulta" })}</div>
-            ${nota(`El enlace sirve hasta el ${venceEnChile(expira)} (hora de Chile). Ábrelo desde tu celular o computador y permite el uso de la cámara y el micrófono. Si no esperabas esta videoconsulta, ignora este correo.`)}`,
+            ${nota(`Para entrar tienes hasta el ${venceEnChile(expira)} (hora de Chile); si no alcanzas, pídele un enlace nuevo al profesional. Ábrelo desde tu celular o computador y permite el uso de la cámara y el micrófono. Si no esperabas esta videoconsulta, ignora este correo.`)}`,
         nombreEmpresa: empresa?.empresaNombre,
     });
 }
